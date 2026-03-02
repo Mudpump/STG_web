@@ -1,0 +1,391 @@
+# 🎯 이슈떡상 독해력 퀴즈 & 리더보드 시스템 - 웹앱(React) 개발 가이드
+
+> 이 문서는 **세특각(STGAK)** 프로젝트의 퀴즈 풀이 정책, 점수 처리 절차, 리더보드 집계 방식, 학습 기록 그래프 데이터**를 웹앱(React) 개발자가 AI 도구에게 전달하기 위한 통합 지시문입니다.
+
+---
+
+## 1. 전체 기능 흐름 요약
+
+```mermaid
+flowchart TD
+    A[이슈떡상 상세 페이지 진입] --> B[독해력 퀴즈 Q1, Q2 표시]
+    B --> C{이미 풀었는가?}
+    C -- "최초 풀이" --> D[정답 제출 → DB 기록]
+    D --> E{정답인가?}
+    E -- 맞음 --> F[+10pt 획득]
+    E -- 틀림 --> G[0pt / 기록만 저장]
+    F --> H[3곳 동시 업데이트]
+    G --> H
+    H --> H1[user_answers INSERT]
+    H --> H2[daily_scores UPSERT via RPC]
+    H --> H3[profiles.points INCREMENT via RPC]
+    C -- "재풀이 (뒤로 갔다 다시 들어옴)" --> I[풀기는 가능하지만 점수 0pt]
+    I --> J[DB INSERT 시도 → UNIQUE 제약으로 차단 또는 중복 체크]
+```
+
+---
+
+## 2. 데이터베이스 스키마 (Supabase)
+
+### 2.1 `user_answers` 테이블 — 퀴즈별 풀이 기록
+
+| 컬럼명 | 타입 | 설명 |
+|:---|:---|:---|
+| `id` | uuid (PK) | 자동 생성 |
+| `user_id` | uuid (FK → auth.users) | 풀이한 유저 |
+| `trend_id` | uuid (FK → trends) | 이슈떡상 게시글 ID |
+| `quiz_index` | int | **몇 번째 퀴즈인지** (0부터 시작, Q1=0, Q2=1) |
+| `is_correct` | boolean | 정답 여부 |
+| `points_earned` | int | 획득한 포인트 (정답 10, 오답 0) |
+| `answered_at` | timestamptz | 제출 시각 (리더보드 기간 필터에 사용) |
+
+> [!IMPORTANT]
+> **UNIQUE 제약조건: `(user_id, trend_id, quiz_index)`**
+> 같은 유저가 같은 게시글의 같은 퀴즈를 두 번 INSERT 할 수 없습니다. 이것이 **"한 번만 점수 카운팅"**의 핵심 안전장치입니다.
+
+### 2.2 `daily_scores` 테이블 — 일별 학습 기록 (그래프용)
+
+| 컬럼명 | 타입 | 설명 |
+|:---|:---|:---|
+| `id` | uuid (PK) | 자동 생성 |
+| `user_id` | uuid (FK → auth.users) | 유저 |
+| `score_date` | date | 해당 날짜 (YYYY-MM-DD) |
+| `points` | int | 그 날 획득한 총 포인트 |
+| `correct_count` | int | 그 날 맞힌 문제 수 |
+| `total_count` | int | 그 날 푼 총 문제 수 |
+
+> **UNIQUE 제약조건: `(user_id, score_date)`** — 하루에 한 행만 존재하며, 새로운 퀴즈를 풀 때마다 **누적(+= 연산)**됩니다.
+
+### 2.3 `profiles` 테이블 — 유저 누적 포인트 (마이카드에도 표시)
+
+| 관련 컬럼 | 타입 | 설명 |
+|:---|:---|:---|
+| `points` | int | 유저의 전체 누적 포인트 |
+
+### 2.4 `trends` 테이블 — 이슈떡상 게시물 (퀴즈 원본)
+
+| 관련 컬럼 | 타입 | 설명 |
+|:---|:---|:---|
+| `id` | uuid | 게시물 고유 ID |
+| `quizzes` | jsonb | 퀴즈 배열 (아래 구조 참고) |
+
+**`quizzes` JSONB 구조 (배열):**
+```json
+[
+  {
+    "question": "문제 본문...",
+    "options": ["선택지1", "선택지2", "선택지3", "선택지4", "선택지5"],
+    "answer": 2,
+    "explanation": "해설 본문...",
+    "type": "FACT_CHECK",
+    "correct_rate": null
+  },
+  {
+    "question": "두번째 문제...",
+    "options": ["...", "...", "...", "...", "..."],
+    "answer": 0,
+    "explanation": "...",
+    "type": "INFERENCE",
+    "correct_rate": null
+  }
+]
+```
+- `answer`: **0-based index** (0번째 선택지가 정답이면 `0`)
+- `type`: `FACT_CHECK` (사실 확인형) 또는 `INFERENCE` (추론형)
+- 퀴즈는 **항상 2문제** (`quiz_index`: 0, 1)
+
+---
+
+## 3. 퀴즈 풀이 정책 (핵심 비즈니스 로직)
+
+### 3.1 "한 번만 점수" 정책
+
+| 상황 | 풀 수 있는지? | 점수(DB 기록) |
+|:---|:---|:---|
+| **최초 풀이** | ✅ 풀 수 있음 | ✅ 정답 시 +10pt, 오답 시 0pt 기록 |
+| **뒤로 갔다 재진입** | ✅ UI에서는 풀 수 있음 | ❌ 점수 0pt (DB에서 중복 차단) |
+| **다른 기기에서 같은 계정** | ✅ UI에서는 풀 수 있음 | ❌ 점수 0pt (DB UNIQUE 제약) |
+
+### 3.2 구현 방식 (반드시 지켜야 할 로직)
+
+```
+1. 유저가 정답을 제출하면, 서버에서 먼저 중복 체크:
+   → SELECT FROM user_answers WHERE user_id = ? AND trend_id = ? AND quiz_index = ?
+
+2-a. 이미 있으면 (재풀이):
+   → return 0 (점수 없음, DB INSERT 하지 않음)
+
+2-b. 없으면 (최초 풀이):
+   → INSERT INTO user_answers (user_id, trend_id, quiz_index, is_correct, points_earned)
+   → 정답이면 10pt, 오답이면 0pt
+   → daily_scores 테이블에 RPC로 누적 업데이트
+   → profiles.points에 RPC로 누적 업데이트
+   → return 획득한 포인트 (10 또는 0)
+```
+
+---
+
+## 4. Supabase RPC 함수 (서버사이드 로직)
+
+### 4.1 `upsert_daily_score` — 일별 점수 누적
+
+```sql
+-- 해당 날짜의 daily_scores 행이 없으면 INSERT, 있으면 += 누적
+upsert_daily_score(
+  p_user_id UUID,
+  p_score_date DATE,    -- 오늘 날짜 (YYYY-MM-DD)
+  p_points INT,         -- 이번에 획득한 점수 (10 또는 0)
+  p_correct INT,        -- 정답이면 1, 오답이면 0
+  p_total INT           -- 항상 1 (문제 1개 풀었으므로)
+)
+```
+
+### 4.2 `increment_profile_points` — 유저 누적 포인트 증가
+
+```sql
+-- profiles 테이블의 points 컬럼에 += 연산
+increment_profile_points(
+  p_user_id UUID,
+  p_points INT          -- 이번에 획득한 점수
+)
+```
+
+### 4.3 `get_leaderboard` — 개인별 리더보드 조회
+
+```sql
+get_leaderboard(
+  p_start_date TIMESTAMPTZ,  -- 기간 시작일
+  p_end_date TIMESTAMPTZ,    -- 기간 종료일
+  p_limit INT DEFAULT 10     -- 상위 N명
+)
+-- 반환: user_id, nickname, photo_url, total_points, rank
+-- 로직: user_answers에서 is_correct=true인 행의 points_earned를 SUM
+--       answered_at이 기간 내에 있는 것만 필터
+--       RANK() OVER (ORDER BY SUM DESC) 로 순위 매김
+```
+
+### 4.4 `get_user_rank` — 내 순위 조회
+
+```sql
+get_user_rank(
+  p_user_id UUID,
+  p_start_date TIMESTAMPTZ,
+  p_end_date TIMESTAMPTZ
+)
+-- 반환: rank, total_points, correct_count, total_count
+-- 로직: 전체 유저 중 나의 순위를 반환 (RANK 함수 사용)
+```
+
+### 4.5 `get_school_leaderboard` — 학교별 리더보드 조회
+
+> [!WARNING]
+> 이 RPC 함수는 Flutter 클라이언트에서 호출하고 있지만, SQL 마이그레이션 파일에는 아직 정의되어 있지 않습니다. React 웹앱 개발 시 아래 로직으로 직접 생성해야 합니다.
+
+```sql
+get_school_leaderboard(
+  p_start_date TIMESTAMPTZ,
+  p_end_date TIMESTAMPTZ,
+  p_limit INT DEFAULT 10
+)
+-- 반환: school_id, school_name, region, total_points, rank
+-- 로직: user_answers JOIN profiles (school_id) JOIN schools (school_name)
+--       학교별로 소속 학생들의 points_earned 합산
+--       학교 단위로 RANK 매김
+```
+
+---
+
+## 5. 리더보드 기간 기준 (주간 / 월간)
+
+### 5.1 주간 기준일
+
+| 항목 | 값 |
+|:---|:---|
+| **시작일** | 현재 주의 **월요일 00:00:00** |
+| **종료일** | **다음 월요일 00:00:00** (= 시작일 + 7일) |
+| **계산 방식** | `월요일 = today - (today.weekday - 1)일` |
+
+```javascript
+// React에서의 계산 예시
+const now = new Date();
+const monday = new Date(now);
+monday.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
+monday.setHours(0, 0, 0, 0);
+const weekEnd = new Date(monday);
+weekEnd.setDate(monday.getDate() + 7);
+```
+
+### 5.2 월간 기준일
+
+| 항목 | 값 |
+|:---|:---|
+| **시작일** | 현재 월의 **1일 00:00:00** |
+| **종료일** | **다음 달 1일 00:00:00** |
+
+```javascript
+const now = new Date();
+const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+```
+
+### 5.3 필터링 기준 컬럼
+
+> [!IMPORTANT]
+> 리더보드에서 기간을 필터링할 때 사용하는 컬럼은 **`user_answers.answered_at`** 입니다.
+> `daily_scores.score_date`가 아니라, **유저가 실제 정답을 제출한 시각(answered_at)** 기준으로 집계합니다.
+
+---
+
+## 6. 리더보드 종류 및 데이터 모델
+
+### 6.1 개인별 리더보드 (`LeaderboardEntry`)
+
+```typescript
+interface LeaderboardEntry {
+  user_id: string;
+  nickname: string;
+  photo_url: string | null;
+  total_points: number;  // 해당 기간 내 정답 포인트 합계
+  rank: number;          // 순위 (RANK 함수, 동점이면 같은 순위)
+}
+```
+
+### 6.2 학교별 리더보드 (`SchoolLeaderboardEntry`)
+
+```typescript
+interface SchoolLeaderboardEntry {
+  school_id: string;
+  school_name: string;
+  region: string | null;  // 지역 (교육청명)
+  total_points: number;   // 해당 학교 소속 학생들의 포인트 합산
+  rank: number;
+}
+```
+- 학교별 점수는 해당 학교에 `school_id`가 등록된 모든 학생의 `points_earned`를 합산.
+- `profiles.school_id` ↔ `schools.school_id` JOIN으로 학교명 연결.
+
+### 6.3 내 순위 정보 (`UserRankInfo`)
+
+```typescript
+interface UserRankInfo {
+  rank: number;
+  total_points: number;
+  correct_count: number;  // 해당 기간 내 맞힌 수
+  total_count: number;    // 해당 기간 내 푼 총 수
+}
+```
+
+---
+
+## 7. 마이페이지 학습 기록 그래프 (Weekly Progress)
+
+### 7.1 데이터 소스
+
+`daily_scores` 테이블에서 **이번 주 월요일 이후**의 데이터를 조회합니다.
+
+```sql
+SELECT * FROM daily_scores
+WHERE user_id = '현재유저ID'
+  AND score_date >= '이번주 월요일 (YYYY-MM-DD)'
+ORDER BY score_date;
+```
+
+### 7.2 그래프 구성
+
+| 항목 | 설명 |
+|:---|:---|
+| **X축** | 월~일 (7칸) |
+| **Y축** | 해당 날짜의 `points` 값 |
+| **막대 높이** | `(해당일 points / 최대값) × 그래프 높이` |
+| **오늘 강조** | 오늘 날짜의 막대는 색상 강조 (네온 그린 `#CCFF00`, 검정 테두리) |
+| **과거 데이터** | 보라색 반투명 바 |
+| **데이터 없는 날** | 매우 얇은 회색 바 (높이 4px) |
+
+### 7.3 하단 통계 요약
+
+그래프 아래에는 3가지 통계를 표시합니다:
+
+```typescript
+interface DailyScore {
+  score_date: string;    // 'YYYY-MM-DD'
+  points: number;
+  correct_count: number;
+  total_count: number;
+}
+
+// 요약 계산
+const totalPoints = weeklyData.reduce((sum, d) => sum + d.points, 0);
+const correctCount = weeklyData.reduce((sum, d) => sum + d.correct_count, 0);
+const totalCount = weeklyData.reduce((sum, d) => sum + d.total_count, 0);
+const accuracy = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+```
+
+| 표시 항목 | 계산 |
+|:---|:---|
+| **총점** | `totalPoints pt` |
+| **정답률** | `accuracy%` |
+| **풀이** | `correctCount / totalCount` |
+
+---
+
+## 8. 웹앱(React) 개발용 AI 프롬프트 (복붙용)
+
+```text
+React, Supabase, Tailwind CSS를 사용하여 '이슈떡상 독해력 퀴즈'와 '리더보드' 기능을 구현해 줘.
+아래의 DB 스키마, 점수 정책, 리더보드 집계 방식을 정확히 지켜서 작성해 줘.
+
+---
+
+### A. 퀴즈 컴포넌트 (QuizWidget)
+- 이슈떡상 상세 페이지에 퀴즈가 2개 표시됨 (Q1, Q2).
+- 퀴즈 데이터는 trends 테이블의 `quizzes` JSONB 컬럼에 배열로 저장되어 있음.
+  - 각 퀴즈 구조: { question, options: string[5], answer: int(0-based), explanation, type }
+- 선택지를 고른 뒤 '정답 제출하기' 버튼을 누르면 채점됨.
+- 제출 후에는 정답은 초록색, 오답은 빨간색으로 표시하고, 해설(explanation)을 보여줌.
+- **핵심 정책 (1회 점수 제한):**
+  1. 제출 시 `user_answers` 테이블에서 (user_id, trend_id, quiz_index) 조합으로 중복 체크.
+  2. 기록이 없으면 (최초 풀이): INSERT + 정답이면 10pt, 오답이면 0pt 기록.
+     + `upsert_daily_score` RPC 호출 (오늘 날짜, 점수, 정답여부)
+     + `increment_profile_points` RPC 호출 (포인트 누적)
+  3. 기록이 있으면 (재풀이): UI에서 풀기는 가능하지만, DB INSERT 하지 않고 0pt 반환.
+  4. DB에 UNIQUE(user_id, trend_id, quiz_index) 제약이 걸려 있어 이중 안전장치 역할.
+
+---
+
+### B. 리더보드 컴포넌트 (LeaderboardSection)
+- 마이페이지에 위치하며 '🏆 리더보드' 카드와 '📊 이번 주 진행 현황' 카드로 구성.
+- **주간/월간 토글:** 주간(기본) ↔ 월간 전환 가능.
+  - 주간: 이번 주 월요일 00:00:00 ~ 다음 월요일 00:00:00
+  - 월간: 이번 달 1일 00:00:00 ~ 다음 달 1일 00:00:00
+- **학생/학교 탭:** 개인별 ↔ 학교별 리더보드 전환.
+  - 개인별: `get_leaderboard` RPC 호출 → 상위 3명 표시 (🥇🥈🥉).
+  - 학교별: `get_school_leaderboard` RPC 호출 → 상위 5개교 표시.
+  - 학교별 점수 = 해당 학교에 school_id가 등록된 모든 학생의 points_earned 합산.
+- **내 순위:** `get_user_rank` RPC → rank, total_points 표시.
+- **이번 주 진행 현황 (막대 그래프):**
+  - `daily_scores` 테이블에서 이번 주 월요일 이후 데이터 조회.
+  - X축: 월~일(7칸), Y축: 해당일 points.
+  - 하단에 총점/정답률/풀이 수 통계 표시.
+
+---
+
+### C. 사용할 DB 테이블 및 RPC 요약
+- user_answers: { user_id, trend_id, quiz_index, is_correct, points_earned, answered_at }
+  UNIQUE(user_id, trend_id, quiz_index)
+- daily_scores: { user_id, score_date, points, correct_count, total_count }
+  UNIQUE(user_id, score_date)
+- profiles: points 컬럼 (누적 포인트)
+- RPC 함수: upsert_daily_score, increment_profile_points, get_leaderboard, get_user_rank, get_school_leaderboard
+
+위의 모든 정책과 DB 구조를 반영하여 구현해 줘.
+```
+
+---
+
+## 9. 주의사항 및 체크리스트
+
+- [ ] `user_answers` 테이블에 UNIQUE(user_id, trend_id, quiz_index) 제약조건이 있는지 확인
+- [ ] 퀴즈 제출 시 **반드시 서버사이드에서 중복 체크** (클라이언트 체크만으로는 불충분)
+- [ ] `get_school_leaderboard` RPC 함수가 Supabase에 생성되어 있는지 확인 (현재 Flutter 코드에서 호출 중이지만 SQL 마이그레이션에 정의가 누락되어 있음)
+- [ ] 리더보드 기간 필터는 `user_answers.answered_at` 기준 (`daily_scores.score_date` 아님)
+- [ ] 학교별 리더보드는 `profiles.school_id`가 등록된 유저만 집계됨 (학교 미등록 유저는 학교 랭킹에 불포함)
