@@ -1,0 +1,91 @@
+# 토론찍먹(Arena) 웹앱 구현 상세 가이드 & 명세서
+
+이 문서는 AI 기반 코딩 툴을 사용하는 웹 프론트엔드(React) 개발자에게 '토론찍먹' 기능의 구현 방향과 정확한 요구사항을 안내하기 위해 작성되었습니다.
+
+---
+
+## 1. 개요 및 개선 목표
+기존 앱(Flutter)의 토론찍먹 기능을 웹앱으로 포팅하면서 기존의 아쉬웠던 점을 개선하고자 합니다.
+1. **A/B 투표 변경 개선:** 기존엔 A/B 변경이 자유롭지 못하고 딜레이/버그가 존재했습니다. 웹앱에서는 A/B 투표 항목을 자유롭고 즉각적(Optimistic UI)으로 변경할 수 있도록 부드러운 로직을 구현해야 합니다.
+2. **인터랙션 및 정보 UI 강화:** 게시글 요소에 있는 **하트(좋아요), 댓글 수, 참여자 인원** 표시가 너무 작고 단순했습니다. 웹 버전에서는 이들을 눈에 띄게 강조하고 디자인을 세련되게 뽑아주세요.
+
+---
+
+## 2. UI/UX 및 디자인 시스템(Design System)
+
+기존 앱의 느낌을 살리면서 훨씬 매끄러운 반응형 웹으로 구현해주세요.
+
+### 색상 팔레트 (Colors)
+- **배경 (Background):** 
+  - 앱 전체 배경: `#FDFBF7`
+  - 카드 배경: `#FFFFFF` 
+- **투표 옵션 A (Violet 계열):**
+  - Text & Border: `#8B5CF6`
+  - Background (미투표 또는 게이지 테두리 등에 사용): `#F5F3FF`
+- **투표 옵션 B (Blue 계열):**
+  - Text & Border: `#3B82F6`
+  - Background (미투표 또는 게이지 테두리 등에 사용): `#EFF6FF`
+- **텍스트 (Text Colors):**
+  - 메인 제목: `#1F2937`
+  - 본문 설명: 뷰 모드에 따라 `#6B7280`(목록) / `#222222`(상세)
+- **카드 테두리 및 그림자:**
+  - Border: 얇고 연한 `#E5E7EB` 색상 1px 적용
+  - Box Shadow: `rgba(0,0,0,0.04)` blur 16px, offset Y 4px
+
+### 타이포그래피 (Typography)
+- **기본 폰트:** `Pretendard` (제목 18px~22px, 본문 14px~16px)
+- **포인트 폰트:** `Jua` 폰트 (투표 A/B 알파벳 라벨 등에 키치하게 사용, 크기 24px)
+
+### 레이아웃 및 애니메이션 패턴 가이드
+**1) 상태에 따른 뷰 전환 (CrossFade 적용)**
+- **미투표 상태:** A항목 / B항목 버튼이 동일한 높이 비율로 크게 나란히 배치됨.
+- **투표 후 상태 (및 A/B 변경 제어):** 버튼이 사라지고 A, B 각각의 퍼센티지를 알 수 있는 **Progress Bar**로 전환. 
+  - ProgressBar 배경: `#F3F4F6`
+  - ProgressBar 게이지: 투표한 색상의 `opacity: 0.2`로 채워짐 (예: `rgba(139,92,246,0.2)`)
+  - 투표한 항목 옆에는 체크(✅) 아이콘이나 테두리 강조 표시 위젯 표시.
+  - **중요:** 투표 결과 화면(Progress Bar) 상태에서도 다른 항목을 클릭하면 즉각적으로 다른 항목 투표로 넘어가도록(A -> B 로 변경) 클릭 이벤트를 살려두고, 게이지가 서서히 차오르는 트랜지션 애니메이션 (`transition-width duration-300`)을 적용할 것.
+
+**2) 하단 액티비티 바(Activity Bar) 대폭 개선 (필수 요구사항)**
+- **참여 인원:** 단순히 숫자만 적지 말고 **"🔥 현재 1,200명 참여 중"** 처럼 눈에 띄는 배지(Badge) 형태나 강조된 텍스트로 표현할 것.
+- **좋아요 & 댓글:** 인스타그램/트위터 같은 세련된 스타일의 액션 버튼으로 확장할 것. 
+  - 여백을 충분히 주어 터치/클릭 영역을 확보.
+  - 하트 클릭 시 살짝 커졌다가 작아지는 `Scale 팝(Pop) 애니메이션` 필수로 삽입.
+  - 댓글 수는 말풍선 아이콘과 함께 직관적으로 배치.
+
+---
+
+## 3. DB 연동 및 처리 로직 (Supabase)
+
+기존 앱(Flutter)의 동작 로직을 리액트에 맞게 포팅해야 합니다.
+
+### 데이터 모델링 관계
+- `votes`: 메인 토론 게시글 테이블 (컬럼: `id`, `title`, `description`, `option_a`, `option_b`, `votes_a(A득표수)`, `votes_b(B득표수)`)
+- `vote_history`: 사용자가 투표한 내용 기록 테이블 (컬럼: `vote_id`, `user_id`, `choice('A' or 'B')`)
+- `comments`: 댓글 테이블, `toggle_vote_like`: 좋아요 토글 RPC 함수
+
+### 로직 가이드
+**1. 목록 조회 시 (N+1 방지)**
+목록을 가져올 때 투표 리스트 내부의 총 댓글 수를 N+1번 요청하지 않도록 아래처럼 선언적 조인 쿼리를 작성하세요.
+```javascript
+// N+1 방지 쿼리 예시
+const { data } = await supabase
+  .from('votes')
+  .select('*, comments(count)') // 조인으로 카운트만 병합해옴
+  .order('created_at', { ascending: false });
+```
+이후 사용자(Session)의 `vote_history`를 추가 패치해 각 글카드에 `myVote: 'A' | 'B' | null` 상태를 결합(Map)하여 렌더링합니다.
+
+**2. A/B 투표 액션 및 변경 (Optimistic Update 권장)**
+기존 앱의 "A/B 변경이 자유롭지 못한 이슈"를 해결하기 위해 로터링/로딩 없이 **Optimistic Update(낙관적 업데이트)**를 프론트에서 먼저 적용해야 합니다.
+- **프론트 즉각 반영:** 사용자가 'A'에서 'B'로 바꿀 경우 서버 응답을 기다리지 말고, 리액트 상태(State)에서 즉시 `votes_a - 1`, `votes_b + 1`, `myVote = 'B'`로 변경하여 애니메이션을 발생시킴.
+- **서버 단 처리:** 클라이언트 단에서 `select` 후 변경 쿼리를 날리면 Race Condition이 발생하기 쉬우므로, 되도록 Supabase RPC(Stored Procedure: 함수)를 새로 파서 한 번의 호출로 원자적(Atomic)으로 `vote_history`를 UPSERT 하고 `votes` 테이블의 카운트를 재계산하도록 하는 방법을 추천합니다 (이 방식을 채택하거나, Supabase JS 클라이언트로 Upsert를 안전하게 구현).
+
+**3. 좋아요 토글**
+마찬가지로 낙관적 업데이트 처리 후, 기존 사용 중인 Supabase RPC인 `toggle_vote_like` 를 호출합니다.
+```javascript
+// RPC로 하트 토글 (Atomic Call)
+await supabase.rpc('toggle_vote_like', {
+  p_vote_id: voteId,
+  p_is_currently_liked: isCurrentlyLiked
+});
+```

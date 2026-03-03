@@ -18,8 +18,8 @@ export const Sidebar: React.FC = () => {
     { id: '/admin', icon: Shield, label: '관리자' }
   ];
 
-  // UX Logic: Hide "Write" button on read-only pages (Archive, Brain) for normal users
-  const isReadOnlyPage = (path.startsWith('/archive') || path.startsWith('/brain')) && !isAdmin;
+  // UX Logic: Hide "Write" button on read-only pages (Archive, Brain) for normal users, and always hide on Arena, Admin
+  const isReadOnlyPage = ((path.startsWith('/archive') || path.startsWith('/brain')) && !isAdmin) || path.startsWith('/arena') || path.startsWith('/admin');
 
   let writeLink = '/write?type=FEED';
   let writeLabel = '새 글 쓰기';
@@ -67,17 +67,17 @@ export const Sidebar: React.FC = () => {
             <Link
               key={item.id}
               to={item.id}
-              className={`flex items-center gap-3.5 px-3 py-2.5 rounded-xl transition-all duration-200 group ${isActive
-                  ? 'bg-white text-gray-900 font-bold shadow-sm border border-gray-200/60'
-                  : 'text-gray-500 hover:bg-gray-100/80 hover:text-gray-900 font-medium border border-transparent'
+              className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 group ${isActive
+                ? 'bg-white text-gray-900 font-bold shadow-sm border border-gray-200/60'
+                : 'text-gray-500 hover:bg-gray-100/80 hover:text-gray-900 font-medium border border-transparent'
                 }`}
             >
               <item.icon
-                size={18}
+                size={20}
                 strokeWidth={isActive ? 2.5 : 2}
                 className={isActive ? "text-gray-900" : "text-gray-400 group-hover:text-gray-700"}
               />
-              <span className="text-sm">{item.label}</span>
+              <span className="text-base">{item.label}</span>
             </Link>
           );
         })}

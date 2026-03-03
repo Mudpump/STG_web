@@ -40,77 +40,67 @@ export const TeacherBrainPage: React.FC = () => {
 
   return (
     <div className="p-4 md:p-0 pb-20">
-      {/* Header Section */}
-      <div className="mb-8 pl-1">
-        <div className="flex items-center gap-2 mb-2">
-            <Brain className="text-primary" size={28} strokeWidth={2.5} />
-            <h2 className="text-2xl font-black text-gray-900">쌤뇌해킹</h2>
-        </div>
-        <p className="text-sm text-gray-500 leading-relaxed">
-          선생님의 관점을 훔치고, 생기부를 전략적으로 공략하는<br className="md:hidden"/>
-          <span className="font-bold text-gray-800"> 최상위권의 시크릿 가이드</span>
-        </p>
-      </div>
+      {/* Header Section removed -> handled by Desktop Nav */}
 
       <div className="space-y-6">
         {/* 1. Main Featured Card: 세특 100% 이해하기 */}
-        <div 
-            onClick={() => handleCardClick('must-read')}
-            className="bg-gray-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group cursor-pointer transition-transform hover:scale-[1.01]"
+        <div
+          onClick={() => handleCardClick('must-read')}
+          className="bg-gray-900 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden group cursor-pointer transition-transform hover:scale-[1.01]"
         >
-            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Lightbulb size={120} />
+          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+            <Lightbulb size={120} />
+          </div>
+          <div className="relative z-10">
+            <span className="bg-primary/90 text-white text-[10px] font-bold px-2 py-1 rounded mb-3 inline-block shadow-sm">
+              Must Read
+            </span>
+            <h3 className="text-2xl font-black mb-3 text-white">세특 100% 이해하기</h3>
+            <p className="text-gray-300 text-sm mb-6 leading-relaxed max-w-lg font-medium">
+              대학이 진짜 보고 싶은 건 단순한 '성실함'이 아닙니다.
+              "얘는 진짜다"라는 느낌을 주는 세특의 본질적 정의와,
+              입학사정관이 3초 만에 합격 시그널을 느끼는 포인트는 따로 있습니다.
+            </p>
+            <div className="flex items-center gap-2 text-sm font-bold text-primary-light group-hover:text-white transition-colors bg-white/10 w-fit px-4 py-2 rounded-full backdrop-blur-sm">
+              지금 읽으러 가기 <ChevronRight size={16} />
             </div>
-            <div className="relative z-10">
-                <span className="bg-primary/90 text-white text-[10px] font-bold px-2 py-1 rounded mb-3 inline-block shadow-sm">
-                    Must Read
-                </span>
-                <h3 className="text-2xl font-black mb-3 text-white">세특 100% 이해하기</h3>
-                <p className="text-gray-300 text-sm mb-6 leading-relaxed max-w-lg font-medium">
-                    대학이 진짜 보고 싶은 건 단순한 '성실함'이 아닙니다. 
-                    "얘는 진짜다"라는 느낌을 주는 세특의 본질적 정의와, 
-                    입학사정관이 3초 만에 합격 시그널을 느끼는 포인트는 따로 있습니다.
-                </p>
-                <div className="flex items-center gap-2 text-sm font-bold text-primary-light group-hover:text-white transition-colors bg-white/10 w-fit px-4 py-2 rounded-full backdrop-blur-sm">
-                    지금 읽으러 가기 <ChevronRight size={16} />
-                </div>
-            </div>
+          </div>
         </div>
 
         {/* 2. Strategy Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {strategies.map((item) => (
-                <div 
-                    key={item.id} 
-                    onClick={() => handleCardClick(item.id)}
-                    className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/30 transition-all cursor-pointer group h-full flex flex-col"
-                >
-                    <div className="flex items-start justify-between mb-4">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-md ${item.color} group-hover:rotate-6 transition-transform duration-300`}>
-                            {item.icon}
-                        </div>
-                        <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-gray-100 transition-colors">
-                            <ChevronRight className="text-gray-300 group-hover:text-gray-600" size={18} />
-                        </div>
-                    </div>
-                    
-                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-primary transition-colors">
-                        {item.title}
-                    </h3>
-                    
-                    <p className="text-sm text-gray-600 leading-relaxed mb-5 flex-1 font-medium">
-                        {item.desc}
-                    </p>
-                    
-                    <div className="flex flex-wrap gap-2 mt-auto">
-                        {item.tags.map((tag, i) => (
-                            <span key={i} className="text-[10px] font-bold bg-gray-50 text-gray-500 px-2 py-1 rounded border border-gray-100">
-                                #{tag}
-                            </span>
-                        ))}
-                    </div>
+          {strategies.map((item) => (
+            <div
+              key={item.id}
+              onClick={() => handleCardClick(item.id)}
+              className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/30 transition-all cursor-pointer group h-full flex flex-col"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-md ${item.color} group-hover:rotate-6 transition-transform duration-300`}>
+                  {item.icon}
                 </div>
-            ))}
+                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-gray-100 transition-colors">
+                  <ChevronRight className="text-gray-300 group-hover:text-gray-600" size={18} />
+                </div>
+              </div>
+
+              <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-primary transition-colors">
+                {item.title}
+              </h3>
+
+              <p className="text-sm text-gray-600 leading-relaxed mb-5 flex-1 font-medium">
+                {item.desc}
+              </p>
+
+              <div className="flex flex-wrap gap-2 mt-auto">
+                {item.tags.map((tag, i) => (
+                  <span key={i} className="text-[10px] font-bold bg-gray-50 text-gray-500 px-2 py-1 rounded border border-gray-100">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

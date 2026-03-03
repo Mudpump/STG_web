@@ -427,19 +427,45 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const fetchVotes = async () => {
     const currentFetchId = ++latestFetchVotesId;
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const currentUid = sessionData.session?.user?.id;
+
       const { data: votesData, error: votesError } = await supabase.from('votes').select('*').order('created_at', { ascending: false });
-      let loadedVotes: VoteItem[] = [];
+      let finalVotes: VoteItem[] = [];
+
       if (!votesError && votesData) {
         const { data: commentsData } = await supabase.from('comments').select('*');
         const allComments = commentsData || [];
-        loadedVotes = votesData.map((d: any) => ({
-          id: d.id, title: d.title, description: d.description, optionA: d.option_a, optionB: d.option_b,
-          votesA: d.votes_a || 0, votesB: d.votes_b || 0, likeCount: d.like_count || 0, comments: buildCommentTree(allComments.filter((c: any) => c.vote_id === d.id))
-        }));
+
+        let userHistory: any[] = [];
+        if (currentUid) {
+          const { data: hData } = await supabase.from('vote_history').select('vote_id, choice').eq('user_id', currentUid);
+          userHistory = hData || [];
+        }
+
+        const loadedVotes = votesData.map((d: any) => {
+          const historyItem = userHistory.find(h => h.vote_id === d.id);
+          return {
+            id: d.id, title: d.title, description: d.description, optionA: d.option_a, optionB: d.option_b,
+            votesA: d.votes_a || 0, votesB: d.votes_b || 0, likeCount: d.like_count || 0, comments: buildCommentTree(allComments.filter((c: any) => c.vote_id === d.id)),
+            myVote: historyItem ? historyItem.choice as 'A' | 'B' : undefined
+          };
+        });
+
+        const mappedArenaData = ARENA_DATA.map(v => {
+          const historyItem = userHistory.find(h => h.vote_id === v.id);
+          return historyItem ? { ...v, myVote: historyItem.choice as 'A' | 'B' } : v;
+        });
+
+        finalVotes = [...loadedVotes, ...mappedArenaData];
       }
+
       if (currentFetchId !== latestFetchVotesId) return;
-      setVotes([...loadedVotes, ...ARENA_DATA]);
-      if (currentUser) { fetchUserVoteHistory(currentUser.uid); }
+      if (finalVotes.length > 0) {
+        setVotes(finalVotes);
+      } else {
+        setVotes(ARENA_DATA);
+      }
     } catch (e) { console.error(e); }
   };
 
@@ -807,11 +833,78 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const deleteTrendComment = async (id: string, cid: string | number) => { const { error, data } = await supabase.from('comments').delete().eq('id', cid).select(); if (error || !data || data.length === 0) { fetchTrends(); } };
   const addVote = async (vote: any) => await supabase.from('votes').insert({ title: vote.title, description: vote.description, option_a: vote.optionA, option_b: vote.optionB });
   const deleteVote = async (id: string) => { setVotes(prev => prev.filter(v => v.id !== id)); await supabase.from('comments').delete().eq('vote_id', id); const { error, data } = await supabase.from('votes').delete().eq('id', id).select(); if (error || !data || data.length === 0) { fetchVotes(); } };
-  const castVote = async (voteId: string, choice: 'A' | 'B') => { if (!currentUser) { openLoginModal(); return; } const currentVoteItem = votes.find(v => v.id === voteId); if (!currentVoteItem) return; const previousChoice = currentVoteItem.myVote; if (previousChoice === choice) return; const newVotesA = currentVoteItem.votesA + (choice === 'A' ? 1 : 0) - (previousChoice === 'A' ? 1 : 0); const newVotesB = currentVoteItem.votesB + (choice === 'B' ? 1 : 0) - (previousChoice === 'B' ? 1 : 0); setVotes(prev => prev.map(v => v.id === voteId ? { ...v, myVote: choice, votesA: newVotesA, votesB: newVotesB } : v)); try { const { error: historyError } = await supabase.from('vote_history').upsert({ vote_id: voteId, user_id: currentUser.uid, choice: choice }, { onConflict: 'vote_id, user_id' }); if (historyError) throw historyError; const { data: remoteVote, error: fetchError } = await supabase.from('votes').select('votes_a, votes_b').eq('id', voteId).single(); if (fetchError) { if (fetchError.code === 'PGRST116') return; throw fetchError; } if (remoteVote) { let dbA = remoteVote.votes_a; let dbB = remoteVote.votes_b; if (previousChoice === 'A') dbA--; if (previousChoice === 'B') dbB--; if (choice === 'A') dbA++; if (choice === 'B') dbB++; const { error: updateError } = await supabase.from('votes').update({ votes_a: dbA, votes_b: dbB }).eq('id', voteId); if (updateError) throw updateError; } } catch (e: any) { console.error("Vote failed:", e); alert("투표 처리에 실패했습니다: " + (e.message || "Unknown error")); setVotes(prev => prev.map(v => v.id === voteId ? { ...v, myVote: previousChoice, votesA: currentVoteItem.votesA, votesB: currentVoteItem.votesB } : v)); } };
+  const castVote = async (voteId: string, choice: 'A' | 'B') => {
+    if (!currentUser) { openLoginModal(); return; }
+    const currentVoteItem = votes.find(v => v.id === voteId);
+    if (!currentVoteItem) return;
+    const previousChoice = currentVoteItem.myVote;
+    if (previousChoice === choice) return;
+
+    const newVotesA = currentVoteItem.votesA + (choice === 'A' ? 1 : 0) - (previousChoice === 'A' ? 1 : 0);
+    const newVotesB = currentVoteItem.votesB + (choice === 'B' ? 1 : 0) - (previousChoice === 'B' ? 1 : 0);
+    setVotes(prev => prev.map(v => v.id === voteId ? { ...v, myVote: choice, votesA: newVotesA, votesB: newVotesB } : v));
+
+    try {
+      const { error } = await supabase.rpc('cast_vote', {
+        p_vote_id: voteId,
+        p_choice: choice
+      });
+      if (error) throw error;
+    } catch (e: any) {
+      console.error("Vote failed:", e);
+      alert("투표 처리에 실패했습니다: " + (e.message || "Unknown error"));
+      setVotes(prev => prev.map(v => v.id === voteId ? { ...v, myVote: previousChoice, votesA: currentVoteItem.votesA, votesB: currentVoteItem.votesB } : v));
+    }
+  };
   const addVoteComment = async (id: string, text: string) => { if (!currentUser) return; const newComment: Comment = { id: Date.now().toString(), agentName: currentUser.displayName || '학생', role: 'User', text, likes: 0, createdAt: '방금 전', isUser: true, uid: currentUser.uid, replies: [] }; setVotes(prev => prev.map(v => v.id === id ? { ...v, comments: [...v.comments, newComment] } : v)); const { error } = await supabase.from('comments').insert({ vote_id: id, agent_name: currentUser.displayName, role: 'User', text, is_user: true, uid: currentUser.uid }); if (error) { fetchVotes(); } };
   const addVoteReply = async (id: string, pid: string | number, text: string) => { if (!currentUser) return; const newReply: Comment = { id: Date.now().toString(), agentName: currentUser.displayName || '학생', role: 'User', text, likes: 0, createdAt: '방금 전', isUser: true, uid: currentUser.uid, replies: [] }; setVotes(prev => prev.map(v => { if (v.id === id) { const addReply = (comments: Comment[]): Comment[] => comments.map(c => { if (c.id === pid) return { ...c, replies: [...(c.replies || []), newReply] }; if (c.replies) return { ...c, replies: addReply(c.replies) }; return c; }); return { ...v, comments: addReply(v.comments) }; } return v; })); const { error } = await supabase.from('comments').insert({ vote_id: id, parent_comment_id: pid, agent_name: currentUser.displayName, role: 'User', text, is_user: true, uid: currentUser.uid }); if (error) { fetchVotes(); } };
   const deleteVoteComment = async (id: string, cid: string | number) => { const { error, data } = await supabase.from('comments').delete().eq('id', cid).select(); if (error || !data || data.length === 0) { fetchVotes(); } };
-  const incrementViewCount = async (type: 'POST' | 'TREND', id: string) => { try { if (type === 'POST') { setPosts(prev => prev.map(p => p.id === id ? { ...p, viewCount: p.viewCount + 1 } : p)); const { data } = await supabase.from('posts').select('view_count').eq('id', id).single(); if (data) await supabase.from('posts').update({ view_count: data.view_count + 1 }).eq('id', id); } else { setTrends(prev => prev.map(t => t.id === id ? { ...t, viewCount: t.viewCount + 1 } : t)); const { data } = await supabase.from('trends').select('view_count').eq('id', id).single(); if (data) await supabase.from('trends').update({ view_count: data.view_count + 1 }).eq('id', id); } } catch (e) { console.error(e); } };
+  // Simple deduplication for view counts to prevent double counting (especially in StrictMode)
+  const viewCountGuard = React.useRef<Set<string>>(new Set());
+
+  const incrementViewCount = async (type: 'POST' | 'TREND', id: string) => {
+    const guardKey = `${type}-${id}`;
+    if (viewCountGuard.current.has(guardKey)) return;
+
+    viewCountGuard.current.add(guardKey);
+    // Auto-remove from guard after 3 seconds to permit re-viewing later
+    setTimeout(() => {
+      viewCountGuard.current.delete(guardKey);
+    }, 3000);
+
+    const isDatabaseItem = id.length > 5; // Simple check for UUID (mock IDs like 'D1' are 2 chars)
+
+    try {
+      if (isDatabaseItem) {
+        // Atomic increment for database items - listener will update the UI
+        const tableName = type === 'POST' ? 'posts' : 'trends';
+        const { error } = await supabase.rpc('increment_view_count', {
+          p_item_id: id,
+          p_table_name: tableName
+        });
+
+        if (error) {
+          console.error(`Error incrementing ${type} view count in DB:`, error);
+          // Fallback to local if RPC fails
+          if (type === 'POST') {
+            setPosts(prev => prev.map(p => p.id === id ? { ...p, viewCount: p.viewCount + 1 } : p));
+          } else {
+            setTrends(prev => prev.map(t => t.id === id ? { ...t, viewCount: t.viewCount + 1 } : t));
+          }
+        }
+      } else {
+        // For mock items, update locally
+        if (type === 'POST') {
+          setPosts(prev => prev.map(p => p.id === id ? { ...p, viewCount: p.viewCount + 1 } : p));
+        } else {
+          setTrends(prev => prev.map(t => t.id === id ? { ...t, viewCount: t.viewCount + 1 } : t));
+        }
+      }
+    } catch (err) {
+      console.error('Error in incrementViewCount:', err);
+      viewCountGuard.current.delete(guardKey);
+    }
+  };
   const toggleLikePost = async (id: string) => { const isLiked = likedPostIds.has(id); const modifier = isLiked ? -1 : 1; setPosts(prev => prev.map(p => p.id === id ? { ...p, likeCount: Math.max(0, p.likeCount + modifier) } : p)); setLikedPostIds(prev => { const next = new Set(prev); if (isLiked) next.delete(id); else next.add(id); return next; }); try { const { data } = await supabase.from('posts').select('like_count').eq('id', id).single(); if (data) await supabase.from('posts').update({ like_count: Math.max(0, data.like_count + modifier) }).eq('id', id); } catch (e) { console.error(e); } };
   const toggleLikeTrend = async (id: string) => { const isLiked = likedTrendIds.has(id); const modifier = isLiked ? -1 : 1; setTrends(prev => prev.map(t => t.id === id ? { ...t, likeCount: Math.max(0, t.likeCount + modifier) } : t)); setLikedTrendIds(prev => { const next = new Set(prev); if (isLiked) next.delete(id); else next.add(id); return next; }); try { const { data } = await supabase.from('trends').select('like_count').eq('id', id).single(); if (data) await supabase.from('trends').update({ like_count: Math.max(0, data.like_count + modifier) }).eq('id', id); } catch (e) { console.error(e); } };
   const toggleLikeVote = async (id: string) => { const isLiked = likedVoteIds.has(id); const modifier = isLiked ? -1 : 1; setVotes(prev => prev.map(v => v.id === id ? { ...v, likeCount: Math.max(0, v.likeCount + modifier) } : v)); setLikedVoteIds(prev => { const next = new Set(prev); if (isLiked) next.delete(id); else next.add(id); return next; }); try { const { data } = await supabase.from('votes').select('like_count').eq('id', id).single(); if (data) await supabase.from('votes').update({ like_count: Math.max(0, data.like_count + modifier) }).eq('id', id); } catch (e) { console.error(e); } };

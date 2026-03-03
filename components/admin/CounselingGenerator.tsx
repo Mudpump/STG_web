@@ -10,9 +10,10 @@ export const CounselingGenerator: React.FC = () => {
     const [logs, setLogs] = useState<string[]>([]);
     const [instruction, setInstruction] = useState('');
 
-    // 답변 대기 중인 글 필터링
-    const unansweredPosts = posts.filter(p => 
-        p.targetProfessorId && 
+    // 답변 대기 중인 글 필터링 (교수님이 직접 작성한 연구실 게시글 제외)
+    const unansweredPosts = posts.filter(p =>
+        p.targetProfessorId &&
+        p.authorRole !== 'Professor' &&
         p.comments.every(c => c.role !== 'Professor')
     );
 
@@ -42,7 +43,7 @@ export const CounselingGenerator: React.FC = () => {
                 </div>
                 {isRunning && <span className="text-xs text-green-500 animate-pulse">● Running</span>}
             </div>
-            
+
             <p className="text-gray-500 text-xs mb-4">답변 대기 중인 학생 질문 ({unansweredPosts.length}건)</p>
 
             <div className="space-y-4 max-h-96 overflow-y-auto pr-2 custom-scrollbar border border-gray-100 rounded-xl p-2 bg-gray-50">
@@ -54,15 +55,15 @@ export const CounselingGenerator: React.FC = () => {
                         </div>
                         <h4 className="font-bold text-gray-900 text-sm mb-1">{post.title}</h4>
                         <p className="text-xs text-gray-600 line-clamp-3 mb-3 bg-gray-50 p-2 rounded">{post.content}</p>
-                        
+
                         <div className="flex gap-2">
-                            <input 
+                            <input
                                 placeholder="관리자 지시사항 (선택: 예 - 좀 더 따뜻하게)"
                                 className="flex-1 text-xs border border-gray-200 rounded px-2 outline-none focus:border-orange-500"
                                 value={instruction}
                                 onChange={e => setInstruction(e.target.value)}
                             />
-                            <button 
+                            <button
                                 onClick={() => handleAnswer(post.id)}
                                 disabled={isRunning}
                                 className="px-3 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-bold hover:bg-orange-600 disabled:opacity-50"

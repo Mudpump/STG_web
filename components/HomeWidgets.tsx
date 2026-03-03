@@ -32,11 +32,11 @@ export const AdmissionOfficerCard: React.FC = () => {
         </div>
 
         <h2 className="text-4xl md:text-6xl font-bold text-white leading-tight mb-5 tracking-tight">
-          입학사정관의 <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">시크릿 노트</span>
+          뾰족한 세특? <br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">오늘부터 세특각</span>
         </h2>
         <p className="text-base md:text-lg text-gray-300 font-medium mb-10 max-w-xl leading-relaxed">
-          합격하는 생기부에는 공식이 있습니다. 수천 건의 데이터를 분석한 AI가 알려주는 극상위권 세특의 비밀을 확인하세요.
+          합격하는 세특에는 공식이 있습니다. 수천명의 AI가 알려주는 극상위권 세특의 비밀을 확인하세요.
         </p>
 
         {/* Button-like Link */}
@@ -90,9 +90,9 @@ export const StrategySection: React.FC = () => {
 
   return (
     <div className="mt-8">
-      <div className="px-1 mb-4 flex items-center gap-2">
-        <div className="w-1 h-4 bg-gray-900 rounded-full"></div>
-        <h3 className="font-bold text-gray-900 tracking-tight text-base">
+      <div className="flex items-center gap-2 mb-6 px-1">
+        <div className="w-1 h-5 bg-indigo-500 rounded-full"></div>
+        <h3 className="font-logo text-xl font-bold text-gray-900 tracking-tight">
           세특 필수 가이드
         </h3>
       </div>

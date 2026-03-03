@@ -25,6 +25,7 @@ import { TeacherBrainDetail } from './pages/TeacherBrainDetail';
 import { EpisodeCard } from './components/EpisodeCard';
 import { BreakPage } from './pages/BreakPage';
 import { AdmissionOfficerCard, StrategySection, ProfessorList } from './components/HomeWidgets';
+import { ArenaHotMatchWidget, ArenaBestCommentWidget } from './components/ArenaWidgets';
 import { LeaderboardWidget } from './components/LeaderboardWidget';
 import { PROFESSORS, CATEGORIES, MAJOR_DETAILS } from './constants';
 
@@ -46,9 +47,9 @@ const MainLayout: React.FC = () => {
     const path = location.pathname;
     const { currentUser, openLoginModal, isAdmin } = useStore();
 
-    // Hide FAB on Read-only pages (Archive, Brain) for non-admins
+    // Hide FAB on Read-only pages (Archive, Brain, Major) for non-admins, and always hide on Arena, Admin
     const isReadOnlyPage = path.startsWith('/archive') || path.startsWith('/brain') || path.startsWith('/major');
-    const shouldHideFab = isReadOnlyPage && !isAdmin;
+    const shouldHideFab = (isReadOnlyPage && !isAdmin) || path.startsWith('/arena') || path.startsWith('/admin');
 
     const showFab = location.pathname !== '/write' && location.pathname !== '/search' && !shouldHideFab;
 
@@ -59,6 +60,22 @@ const MainLayout: React.FC = () => {
     } else if (path.startsWith('/arena')) {
         writeLink = '/write?type=ARENA';
     }
+
+    const getTitleData = (pathname: string) => {
+        if (pathname.startsWith('/feed')) return { title: '탐구줍줍', desc: '골라 골라 쉬운 탐구 하나 골라' };
+        if (pathname === '/') return { title: '홈', desc: '세특 이해하고, 교수님 팔로 팔로 팔로잉' };
+        if (pathname.startsWith('/archive')) return { title: '이슈떡상', desc: '이슈 보고, 점수 먹고, 세특 챙기고' };
+        if (pathname.startsWith('/arena')) return { title: '토론찍먹', desc: '토론은 찍먹, 댓글 보면 사고력은 대확장' };
+        if (pathname.startsWith('/brain')) return { title: '세특 필수 가이드', desc: '읽어보면 느낌온다. 공부 많이 될거야' };
+        if (pathname.startsWith('/break')) return { title: '머리식히기', desc: '공부에 지쳤을 때 잠시 쉬어가는 곳' };
+        if (pathname.startsWith('/major')) return { title: '학과 정보', desc: '교수님과 학과에 대한 모든 것' };
+        if (pathname.startsWith('/search')) return { title: '검색', desc: '원하는 키워드로 지식 찾기' };
+        if (pathname.startsWith('/write')) return { title: '글쓰기', desc: '새로운 정보 나누기' };
+        if (pathname.startsWith('/post')) return { title: '게시글', desc: '세특각 커뮤니티' };
+        if (pathname.startsWith('/my')) return { title: '마이페이지', desc: '나의 활동 기록 및 설정' };
+        if (pathname.startsWith('/admin')) return { title: '관리자', desc: '세특각 관리자 패널' };
+        return null;
+    };
 
     const handleProfileClick = () => {
         if (currentUser) {
@@ -86,7 +103,18 @@ const MainLayout: React.FC = () => {
                 {/* Desktop Header - Improved & Aligned */}
                 <div className="hidden md:flex sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 h-16 items-center">
                     <div className="w-full max-w-6xl mx-auto px-6 flex justify-between items-center">
-                        <div className="flex-1"></div>
+                        <div className="flex-1 flex items-center gap-3">
+                            {getTitleData(path) && (
+                                <>
+                                    <h2 className="text-lg font-black text-gray-900 tracking-tight">{getTitleData(path)?.title}</h2>
+                                    {getTitleData(path)?.desc && (
+                                        <span className="text-xs text-gray-500 font-medium hidden lg:inline-block border-l border-gray-200 pl-3">
+                                            {getTitleData(path)?.desc}
+                                        </span>
+                                    )}
+                                </>
+                            )}
+                        </div>
 
                         {/* Profile & Actions */}
                         <div className="flex items-center gap-4 pl-6">
@@ -569,26 +597,8 @@ const MajorIntroPage: React.FC = () => {
                     </div> {/* End of Main Content (Left 8 cols) */}
 
                     {/* Right 4 columns: Sidebar (Hidden on mobile) */}
-                    <div className="hidden lg:block lg:col-span-4 space-y-6">
+                    <div className="hidden lg:block lg:col-span-4 space-y-6 sticky top-32 self-start">
 
-                        {/* Widget 1: 질문 작성 유도 CTA */}
-                        <div className="bg-white rounded-2xl p-6 border border-primary/20 shadow-sm flex flex-col items-center text-center relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary-light"></div>
-                            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-3">
-                                <MessageCircleQuestion size={24} />
-                            </div>
-                            <h4 className="font-bold text-gray-900 text-[15px] mb-2">진로 관련 궁금증이 있나요?</h4>
-                            <p className="text-xs text-gray-500 mb-5 leading-relaxed">
-                                세특 주제부터 학과 생활까지<br />무엇이든 자유롭게 물어보세요.
-                            </p>
-                            <button
-                                onClick={handleWriteQuestion}
-                                className="w-full bg-primary text-white font-bold text-sm py-3 rounded-xl hover:bg-primary-dark transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-2 hover:-translate-y-0.5"
-                            >
-                                <PenSquare size={16} />
-                                질문 남기기
-                            </button>
-                        </div>
 
                         {/* Widget 2: 실시간 인기글 TOP 3 (Professor Posts) */}
                         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
@@ -832,7 +842,7 @@ const FeedPage: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="hidden lg:block lg:col-span-4 space-y-6">
+                <div className="hidden lg:block lg:col-span-4 space-y-6 sticky top-48 self-start z-10 transition-all duration-300">
                     <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-soft">
                         <h3 className="font-bold text-gray-800 mb-3 text-sm flex items-center gap-1">
                             <Flame size={16} className="text-red-500" /> 실시간 인기 세특
@@ -872,11 +882,7 @@ const ArchivePage: React.FC = () => {
 
     return (
         <div className="p-4 md:p-0">
-            <div className="mb-6">
-                <h2 className="text-2xl font-black text-gray-900 mb-1">이슈떡상</h2>
-                <p className="text-sm text-gray-500">수행평가 주제가 떠오르지 않을 때 찾는 보물창고</p>
-            </div>
-
+            {/* 헤더 섹션 제거됨 -> Desktop Nav 렌더링으로 위임 */}
             <LeaderboardWidget />
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
@@ -892,15 +898,27 @@ const ArenaPage: React.FC = () => {
     const { votes } = useStore();
     return (
         <div className="p-4 md:p-0">
-            <div className="mb-6">
-                <h2 className="text-2xl font-black text-gray-900 mb-1">토론찍먹</h2>
-                <p className="text-sm text-gray-500">댓글 구경하다 사고력이 넓어지는 곳</p>
-            </div>
+            {/* 헤더 섹션 제거됨 -> Desktop Nav 렌더링으로 위임 */}
+            <div className="md:grid md:grid-cols-12 md:gap-6 md:mt-8">
+                <div className="md:col-span-12 lg:col-span-8">
+                    <div className="bg-gray-50 min-h-[calc(100vh-180px)]">
+                        {votes.map(item => (
+                            <ArenaCard key={item.id} item={item} />
+                        ))}
+                        {votes.length === 0 && (
+                            <div className="p-20 text-center text-gray-400 text-sm flex flex-col items-center gap-2">
+                                <span className="text-4xl">📭</span>
+                                등록된 토론이 없습니다.
+                            </div>
+                        )}
+                    </div>
+                </div>
 
-            <div className="max-w-2xl">
-                {votes.map(item => (
-                    <ArenaCard key={item.id} item={item} />
-                ))}
+                {/* Right Sidebar */}
+                <div className="hidden lg:block lg:col-span-4 space-y-6 sticky top-24 self-start z-10 transition-all duration-300">
+                    <ArenaHotMatchWidget />
+                    <ArenaBestCommentWidget />
+                </div>
             </div>
         </div>
     );
@@ -1133,7 +1151,11 @@ const MyPage: React.FC = () => {
 
 
             <button
-                onClick={logout}
+                onClick={() => {
+                    if (window.confirm('정말 로그아웃하시겠습니까?')) {
+                        logout();
+                    }
+                }}
                 className="w-full bg-red-50 border border-red-100 p-4 rounded-xl text-left font-bold text-red-500 hover:bg-red-100 transition-colors"
             >
                 로그아웃
