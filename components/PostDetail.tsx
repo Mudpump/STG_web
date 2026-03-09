@@ -21,7 +21,7 @@ export const PostDetail: React.FC = () => {
     const [replyText, setReplyText] = useState('');
     const [replyingTo, setReplyingTo] = useState<string | number | null>(null);
 
-    const post = posts.find(p => p.id === id);
+    const post = posts.find(p => p.id?.toString() === id?.toString());
 
     useEffect(() => {
         if (id) {

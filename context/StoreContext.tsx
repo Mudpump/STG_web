@@ -366,6 +366,19 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         targetProfessorId: d.target_professor_id
       }));
 
+      // [FIX] 동기화 문제 해결: Feed 목록에 있는 게시글이 전역 posts에 즉시 반영되도록 병합
+      setPosts(prev => {
+        let updated = false;
+        const newPosts = [...prev];
+        mappedPosts.forEach(mp => {
+          if (!newPosts.some(p => p.id.toString() === mp.id.toString())) {
+            newPosts.push(mp);
+            updated = true;
+          }
+        });
+        return updated ? newPosts : prev;
+      });
+
       // 첫 페이지: Dummy Data 병합 + 새로 세팅 / 이후 페이지: 기존에 append
       if (params.page === 1) {
         // Dummy data도 같은 필터 조건 적용

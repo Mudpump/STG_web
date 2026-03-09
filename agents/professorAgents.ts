@@ -4,14 +4,14 @@ import { CategoryId, Post, Comment } from '../types';
 import { ai, MODEL_NAME, cleanText } from './utils';
 import { PROFESSORS, MAJOR_DETAILS } from '../constants';
 
-export type ProfessorTheme = 
-  | 'ROADMAP'      // 1. 전공별 3년 로드맵 (Matrix)
-  | 'PINPOINT'     // 2. 교과서 단원 핀포인트 매칭
-  | 'METHODOLOGY'  // 3. 현실 탐구 방법론 (방구석/현장)
-  | 'CLINIC'       // 4. 망한 주제 심폐소생술
-  | 'TRANSLATION'  // 5. 탐구보고서 말투 세탁소
-  | 'CROSSOVER'    // 6. 미친 융합
-  | 'CUSTOM';      // 관리자 직접 지시
+export type ProfessorTheme =
+    | 'ROADMAP'      // 1. 전공별 3년 로드맵 (Matrix)
+    | 'PINPOINT'     // 2. 교과서 단원 핀포인트 매칭
+    | 'METHODOLOGY'  // 3. 현실 탐구 방법론 (방구석/현장)
+    | 'CLINIC'       // 4. 망한 주제 심폐소생술
+    | 'TRANSLATION'  // 5. 탐구보고서 말투 세탁소
+    | 'CROSSOVER'    // 6. 미친 융합
+    | 'CUSTOM';      // 관리자 직접 지시
 
 export async function runProfessorAgent(
     professorId: string,
@@ -21,9 +21,9 @@ export async function runProfessorAgent(
 ): Promise<Post> {
     const professor = PROFESSORS.find(p => p.id === professorId);
     if (!professor) throw new Error("Professor not found");
-    
+
     const majorInfo = MAJOR_DETAILS[professor.title] || MAJOR_DETAILS[professor.categoryId];
-    
+
     log(`👨‍🏫 Professor Agent: [${professor.name}] 교수님이 [${theme}] 테마로 집필을 시작합니다...`);
 
     // --- 6대 탐구 프레임워크 정의 (학년별 서사 매핑 버전) ---
@@ -85,7 +85,7 @@ export async function runProfessorAgent(
     if (theme === 'CROSSOVER') {
         frameworkLogic = FRAMEWORKS.VIP; // 융합 테마는 무조건 VIP
         selectedModelName = "VIP";
-    } 
+    }
     // 2. Specific Professor Overrides (Pinpoint IDs)
     else if (['prof-ind', 'prof-lib', 'prof-stat', 'prof-biz-2', 'prof-cs', 'prof-math'].includes(professor.id)) {
         frameworkLogic = FRAMEWORKS.QMI;
@@ -117,7 +117,7 @@ export async function runProfessorAgent(
 
     // --- Define Prompt per Theme ---
     let themePrompt = "";
-    
+
     switch (theme) {
         case 'ROADMAP':
             themePrompt = `
@@ -150,18 +150,18 @@ export async function runProfessorAgent(
                 **3. Grade 3: The Convergence (Breakthrough)**
                 - **Logic**: Apply the **3rd letter** of ${selectedModelName}.
                 - **Narrative**: Overcome the G2 limitation by bringing in a **New Tool** (AI, Advanced Math, Big Data, or Philosophical Insight).
-                - **Result**: Propose a concrete solution (Model, Policy, Algorithm) that solves the real-world problem.
+                - **Result**: Propose a concrete solution (Model, Policy, Algorithm) that solves the real-world problem. 1학년, 2학년의 주제를 3학년에 확장된 개념 또는 더 세밀한 개념으로 통합해서 탐구의 연결성 확보
 
                 [Formatting Rules]
                 - **Show, Don't Tell**: NEVER mention internal framework names (DMS, QMI, etc.) or terms like "Limitation", "Linkage" in the output text.
                 - **Headers**: Use creative, descriptive headers relevant to the content. (e.g., "## [1학년] 일상 속의 발견", "## [2학년] 데이터로 검증한 가설", "## [3학년] 기술과 윤리의 공존").
                 - **Bridge Comments**: Between Grade 1&2 and Grade 2&3, insert a specialized block:
-                  > **🔻 교수님의 코멘트:** [Professor's bridging narration connecting the previous limitation to the next step. Keep it warm and mentoring tone.]
-                - **Content Item Format**: For each subject, use strictly this format:
+                  > 🔻 ** 추가의견: ** [Professor's bridging narration connecting the previous limitation to the next step. 분석적이고 차분한 어조이며, 해당 학년을 한계를 다음에는 어떻게 발전시켜 보자는 어조]
+                - **Content Item Format**: For each subject, use strictly this format: 각 subject가 끝나면 enter을 통해 줄바꿈 넣기:
                   - **과목:** [Subject Name]
                   - **탐구주제:** [Topic Title]
-                  - **활동요약:** [Concise summary of the activity/experiment/research]
-                  - **생기부 연결고리:** [The narrative significance. Explicitly mention the **'Limitation'** found or the **'Motivation'** gained. Highlight keywords like **'한계'**, **'현실적 변수'**, **'필요성'** with Markdown Bold, 1학년때 한계와 동기를 이용해서 2학년때 주제를 잡았다는 내용, 1학년 2학년의 과정을 종합해서 3학년에서 해결하는 모습].
+                  - **활동요약:** [Concise summary of the activity/experiment/research(고등학생이 접근하기 용이한 주제)]
+                  - **향후계획/총평:** [The narrative significance. Explicitly mention the **'Limitation'** found or the **'Motivation'** gained. Highlight keywords like **'한계'**, **'현실적 변수'**, **'필요성'** with Markdown Bold, 1학년때 한계와 동기를 이용해서 2학년때 주제를 잡았다는 내용, 1학년 2학년의 과정을 종합해서 3학년에서 해결하는 모습].
             `;
             break;
         case 'PINPOINT':
@@ -220,7 +220,7 @@ export async function runProfessorAgent(
 
     const mainPrompt = `
         You are **Professor ${professor.name}** (${professor.title}).
-        Your Persona: ${professor.introduction}
+        Your Persona: ${professor.title} 전공으로, 해당전공의 연구 및 산업 분야 진로에 대해 박학다식한 사람하며 이 분야 세계 최고이다. 또한 전공뿐만 아니라 고등학생 멘토 분야에서도 두각을 나타내며, 주요 진로와 연계된 로드맵 수립의 대가이다.
         Target Audience: High School Students aiming for your major.
         Current Year: 2026.
         Language: Korean (Professional, Authoritative but Mentoring tone).
@@ -262,7 +262,7 @@ export async function runProfessorAgent(
 
     // 3. Generate Grad Student Comments
     log(`🎓 Grad Students: 석/박사 조교들이 댓글을 달고 있습니다...`);
-    
+
     const commentPrompt = `
         Context: Professor ${professor.name} wrote a post about "${postResult.title}".
         Content Summary: ${postResult.content.substring(0, 300)}...
@@ -272,7 +272,7 @@ export async function runProfessorAgent(
         
         [Directives]
         1. **Simplify**: If the professor's talk is too hard, explain it simply.
-        2. **Practical Tips**: Give realistic tips on how to do the experiments or find data (e.g., "Use Python library X", "Check Kosis for data").
+        2. **Practical Tips**: Give realistic tips on how to do the experiments or find data (e.g., "툴 소개 금지, 데이터 이름은 명시해도 되나 데이터 출처 소개 지양"), 교수님이 제시한 실험이 있다면 고교 수준에서 좀 더 쉽게할 수 있는 방법론 제시 
         3. **Support**: Encourage the students.
         4. **Tone**: Polite but friendly "Sunbae" (Senior) tone. Use terms like "교수님 말씀은~", "현실적으로는~".
         

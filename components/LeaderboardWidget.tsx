@@ -21,7 +21,7 @@ export const LeaderboardWidget: React.FC = () => {
             <div className="flex items-center justify-between mb-5 relative z-10">
                 <div className="flex items-center gap-2">
                     <div className="w-1 h-5 bg-indigo-500 rounded-full"></div>
-                    <h3 className="font-logo text-xl font-bold text-gray-900 tracking-tight">
+                    <h3 className="text-xl font-bold text-gray-900 tracking-tight">
                         독해 랭킹
                     </h3>
                 </div>

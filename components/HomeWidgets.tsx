@@ -92,7 +92,7 @@ export const StrategySection: React.FC = () => {
     <div className="mt-8">
       <div className="flex items-center gap-2 mb-6 px-1">
         <div className="w-1 h-5 bg-indigo-500 rounded-full"></div>
-        <h3 className="font-logo text-xl font-bold text-gray-900 tracking-tight">
+        <h3 className="text-xl font-bold text-gray-900 tracking-tight">
           세특 필수 가이드
         </h3>
       </div>
@@ -177,10 +177,10 @@ export const ProfessorList: React.FC<ProfessorListProps> = ({ selectedCategory, 
 
   return (
     <div className="mt-12">
-      {/* Title Section - Applied font-logo */}
+      {/* Title Section */}
       <div className="flex items-center gap-2 mb-6 px-1">
         <div className="w-1 h-5 bg-emerald-500 rounded-full"></div>
-        <h3 className="font-logo text-xl font-bold text-gray-900 tracking-tight">
+        <h3 className="text-xl font-bold text-gray-900 tracking-tight">
           나의 전공 교수님 찾기
         </h3>
       </div>

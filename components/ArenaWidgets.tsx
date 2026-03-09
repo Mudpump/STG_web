@@ -17,47 +17,37 @@ export const ArenaHotMatchWidget = () => {
         .slice(0, 3);
 
     return (
-        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm relative overflow-hidden">
-            <div className="absolute -top-6 -right-6 w-20 h-20 bg-rose-50 rounded-full blur-2xl opacity-60"></div>
-
-            <h3 className="font-bold text-gray-900 mb-4 text-sm flex items-center gap-1.5 relative z-10">
-                <Flame size={16} className="text-rose-500" fill="currentColor" />
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+            <h4 className="font-bold text-gray-900 flex items-center gap-2 text-sm mb-4">
+                <Flame size={18} className="text-rose-500" />
                 실시간 박빙 매치
-            </h3>
+            </h4>
 
-            <ul className="space-y-4 relative z-10 mt-2">
+            <div className="space-y-4">
                 {hotMatches.map((vote, index) => {
                     const totalVotes = vote.votesA + vote.votesB;
                     return (
-                        <li
+                        <div
                             key={vote.id}
                             onClick={() => navigate(`/arena/${vote.id}`)}
-                            className="group cursor-pointer hover:bg-gray-50/50 transition-colors -mx-2 px-2 py-1.5 rounded-lg"
+                            className="flex gap-3 items-start group cursor-pointer"
                         >
-                            <div className="flex items-start gap-4">
-                                <span className={`text-[22px] font-black mt-0.5 w-6 shrink-0 text-center leading-none ${index === 0 ? 'text-rose-500' :
-                                    index === 1 ? 'text-rose-400' : 'text-gray-300'
-                                    }`}>
-                                    {index + 1}
-                                </span>
-                                <div className="flex-1 min-w-0">
-                                    <h4 className="text-[15px] font-bold text-gray-900 line-clamp-2 leading-snug group-hover:text-rose-600 transition-colors mb-1.5">
-                                        {vote.title}
-                                    </h4>
-                                    <div className="flex items-center gap-3 text-[12px] font-bold text-gray-400">
-                                        <div className="flex items-center gap-1.5">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-rose-400 opacity-80"></div> 투표 {totalVotes}
-                                        </div>
-                                        <div className="flex items-center gap-1 opacity-80">
-                                            <MessageCircle size={12} strokeWidth={2.5} /> {vote.comments?.length || 0}
-                                        </div>
-                                    </div>
+                            <div className="font-black text-gray-300 text-lg leading-none mt-1 group-hover:text-primary transition-colors">
+                                {index + 1}
+                            </div>
+                            <div>
+                                <h5 className="text-sm font-bold text-gray-800 line-clamp-2 leading-snug group-hover:text-primary transition-colors mb-1">
+                                    {vote.title}
+                                </h5>
+                                <div className="flex items-center gap-3 text-[11px] text-gray-400 font-medium">
+                                    <span className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-rose-400 opacity-80" /> 투표 {totalVotes}</span>
+                                    <span className="flex items-center gap-1"><MessageCircle size={10} /> {vote.comments?.length || 0}</span>
                                 </div>
                             </div>
-                        </li>
+                        </div>
                     );
                 })}
-            </ul>
+            </div>
         </div>
     );
 };
