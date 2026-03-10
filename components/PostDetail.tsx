@@ -175,12 +175,13 @@ export const PostDetail: React.FC = () => {
                         const isCommentLiked = likedCommentIds.has(commentKey);
                         const isAuthor = post.isUser ? comment.isUser : comment.agentName === post.authorAgent;
                         // Can delete if Admin OR (User wrote comment)
-                        const canDeleteComment = isAdmin || (currentUser && comment.isUser && comment.uid === currentUser.uid);
+                        const isMyComment = Boolean(currentUser && comment.isUser && comment.uid === currentUser.uid);
+                        const canDeleteComment = isAdmin || isMyComment;
 
                         return (
                             <div key={comment.id} className="group">
                                 {/* Main Comment */}
-                                <div className={`p-4 rounded-xl shadow-sm border relative ${comment.isUser
+                                <div className={`p-4 rounded-xl shadow-sm border relative ${isMyComment
                                     ? 'bg-primary-soft/30 border-primary/10'
                                     : 'bg-white border-gray-100'
                                     }`}>
@@ -253,10 +254,11 @@ export const PostDetail: React.FC = () => {
                                         {comment.replies.map((reply) => {
                                             const replyKey = `POST-${post.id}-${reply.id}`;
                                             const isReplyLiked = likedCommentIds.has(replyKey);
-                                            const canDeleteReply = isAdmin || (currentUser && reply.isUser && reply.uid === currentUser.uid);
+                                            const isMyReply = Boolean(currentUser && reply.isUser && reply.uid === currentUser.uid);
+                                            const canDeleteReply = isAdmin || isMyReply;
 
                                             return (
-                                                <div key={reply.id} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                                <div key={reply.id} className={`p-3 rounded-lg border ${isMyReply ? 'bg-primary-soft/30 border-primary/10' : 'bg-gray-50 border-gray-100'}`}>
                                                     <div className="flex justify-between items-start mb-1">
                                                         <span className="font-bold text-xs text-gray-800 flex items-center gap-1">
                                                             {reply.agentName}

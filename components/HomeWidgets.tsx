@@ -32,11 +32,11 @@ export const AdmissionOfficerCard: React.FC = () => {
         </div>
 
         <h2 className="text-4xl md:text-6xl font-bold text-white leading-tight mb-5 tracking-tight">
-          뾰족한 세특? <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">오늘부터 세특각</span>
+          세특 고민? <br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">오늘부터 세특각에서</span>
         </h2>
         <p className="text-base md:text-lg text-gray-300 font-medium mb-10 max-w-xl leading-relaxed">
-          합격하는 세특에는 공식이 있습니다. 수천명의 AI가 알려주는 극상위권 세특의 비밀을 확인하세요.
+          "너만 모르는 세특의 비밀 공식, 설마 아직도 그냥 채우기만 하니?"
         </p>
 
         {/* Button-like Link */}

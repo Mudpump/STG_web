@@ -14,9 +14,11 @@ export const Sidebar: React.FC = () => {
     { id: '/feed', icon: Compass, label: '탐구줍줍' },
     { id: '/archive', icon: TrendingUp, label: '이슈떡상' },
     { id: '/arena', icon: Swords, label: '토론찍먹' },
-    // Dev: Always show admin link
-    { id: '/admin', icon: Shield, label: '관리자' }
   ];
+
+  if (isAdmin) {
+    navItems.push({ id: '/admin', icon: Shield, label: '관리자' });
+  }
 
   // UX Logic: Hide "Write" button on read-only pages (Archive, Brain) for normal users, and always hide on Arena, Admin
   const isReadOnlyPage = ((path.startsWith('/archive') || path.startsWith('/brain')) && !isAdmin) || path.startsWith('/arena') || path.startsWith('/admin');
@@ -51,7 +53,7 @@ export const Sidebar: React.FC = () => {
             세특각
           </h1>
         </Link>
-        <p className="text-[11px] text-gray-500 mt-2 font-medium pl-1 tracking-wide uppercase">훔쳐보는 입시 정보 커뮤니티</p>
+        <p className="text-[11px] text-gray-500 mt-2 font-medium pl-1 tracking-wide uppercase">세특의 각을 잡아주는 커뮤니티</p>
       </div>
 
       <nav className="flex-1 space-y-1.5">

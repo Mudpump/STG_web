@@ -9,6 +9,9 @@ import { formatTimeAgo } from '../utils/dateUtils';
 import { CATEGORIES, PROFESSORS } from '../constants'; // Import CATEGORIES for iteration
 import { ProfessorTheme } from '../agents/professorAgents'; // Type import
 
+// 관리자 이메일 목록 — 이 목록에 포함된 이메일로 로그인하면 자동으로 관리자 권한을 부여합니다.
+const ADMIN_EMAILS = ['mudpump.woo@gmail.com'];
+
 // Import Dummy Data
 import { FEED_DATA } from '../data/feedData';
 import { ARCHIVE_DATA } from '../data/archiveData';
@@ -688,6 +691,10 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           return;
         }
 
+        // 관리자 이메일 자동 판별
+        const userEmail = session.user.email || '';
+        setIsAdmin(ADMIN_EMAILS.includes(userEmail));
+
         const user: User = {
           uid: session.user.id,
           displayName: session.user.user_metadata.full_name || session.user.user_metadata.name || session.user.email?.split('@')[0] || '학생',
@@ -715,6 +722,10 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
               .maybeSingle();
 
             if (profile) {
+              // DB 기반 관리자 판별 (하드코딩 이메일 + DB role 이중 체크)
+              if (profile.role === 'ADMIN') {
+                setIsAdmin(true);
+              }
               const schoolNameObj: any = profile.schools;
               setCurrentUser(prev => prev ? {
                 ...prev,
@@ -732,6 +743,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }, 0);
       } else {
         setCurrentUser(null);
+        setIsAdmin(false);
         setFollowedProfessorIds(new Set());
         setVotes(prev => prev.map(v => ({ ...v, myVote: undefined })));
       }
@@ -925,7 +937,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const updateCommentTreeLikes = (comments: Comment[], targetId: string | number, modifier: number): Comment[] => { return comments.map(c => { if (c.id === targetId) return { ...c, likes: Math.max(0, c.likes + modifier) }; if (c.replies && c.replies.length > 0) return { ...c, replies: updateCommentTreeLikes(c.replies, targetId, modifier) }; return c; }); };
   const toggleLikeComment = async (type: 'POST' | 'TREND' | 'VOTE', itemId: string, commentId: number | string) => { const key = `${type}-${itemId}-${commentId}`; const isLiked = likedCommentIds.has(key); const modifier = isLiked ? -1 : 1; setLikedCommentIds(prev => { const next = new Set(prev); if (isLiked) next.delete(key); else next.add(key); return next; }); if (type === 'POST') setPosts(prev => prev.map(p => p.id === itemId ? { ...p, comments: updateCommentTreeLikes(p.comments, commentId, modifier) } : p)); else if (type === 'TREND') setTrends(prev => prev.map(t => t.id === itemId ? { ...t, comments: updateCommentTreeLikes(t.comments, commentId, modifier) } : t)); else if (type === 'VOTE') setVotes(prev => prev.map(v => v.id === itemId ? { ...v, comments: updateCommentTreeLikes(v.comments, commentId, modifier) } : v)); try { const { data } = await supabase.from('comments').select('likes').eq('id', commentId).single(); if (data) await supabase.from('comments').update({ likes: Math.max(0, data.likes + modifier) }).eq('id', commentId); } catch (e) { console.error(e); } };
   const toggleFollowProfessor = async (professorId: string) => { const next = new Set(followedProfessorIds); const isFollowing = next.has(professorId); if (isFollowing) next.delete(professorId); else next.add(professorId); setFollowedProfessorIds(next); if (currentUser) { try { if (isFollowing) { await supabase.from('follows').delete().eq('user_id', currentUser.uid).eq('professor_id', professorId); } else { await supabase.from('follows').insert({ user_id: currentUser.uid, professor_id: professorId }); } } catch (e) { console.error("Failed to update follow status", e); setFollowedProfessorIds(followedProfessorIds); } } };
-  const toggleAdmin = (pw?: string) => { if (isAdmin) { setIsAdmin(false); return true; } if (pw === 'admin1234') { setIsAdmin(true); return true; } return false; };
+  // [레거시 호환] toggleAdmin은 로그인 기반 자동 판별로 전환되었습니다. 인터페이스 호환성을 위해 유지합니다.
+  const toggleAdmin = (_pw?: string) => { return isAdmin; };
 
   // --- AI Agent Actions ---
   const generateAIPost = async (onLog: (msg: string) => void, grade: GradeType = 'H1', month: number = 3, keyword: string = '', forcedCategory?: CategoryId) => { try { const post = await runAgentChain(posts, grade, month, keyword, onLog, forcedCategory); const newScenario: PendingScenario = { id: post.id, type: 'FEED', postData: post, pendingComments: post.comments, isApproved: false }; setPendingScenarios(prev => [newScenario, ...prev]); onLog(`✅ 시나리오 생성 완료! (ID: ${post.id})`); } catch (e: any) { onLog(`❌ 에러: ${e.message}`); } };
@@ -998,6 +1011,20 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const approveItem = async (scenarioId: string) => {
+    // 인증 가드: 로그인 상태 확인
+    if (!currentUser) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+
+    // 세션 유효성 확인 & 갱신
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+      openLoginModal();
+      return;
+    }
+
     const scenario = pendingScenarios.find(s => s.id === scenarioId);
     if (!scenario) return;
     try {

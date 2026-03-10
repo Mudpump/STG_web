@@ -3,6 +3,7 @@ import { Type } from "@google/genai";
 import { CategoryId, Post, Comment } from '../types';
 import { ai, MODEL_NAME, cleanText } from './utils';
 import { PROFESSORS, MAJOR_DETAILS } from '../constants';
+import { GRADE_SUBJECTS } from '../utils/curriculumData';
 
 export type ProfessorTheme =
     | 'ROADMAP'      // 1. 전공별 3년 로드맵 (Matrix)
@@ -127,11 +128,15 @@ export async function runProfessorAgent(
                 - **Framework Application**: Apply the **${selectedModelName}** logic to each grade's narrative structure.
 
                 [Subject Selection Rule]
+                - **2022 Revised Curriculum Subjects**: You MUST ONLY select from the following subjects for each grade:
+                  - **Grade 1 (H1)**: ${GRADE_SUBJECTS['H1'].join(', ')}
+                  - **Grade 2 (H2)**: ${GRADE_SUBJECTS['H2'].join(', ')}
+                  - **Grade 3 (H3)**: ${GRADE_SUBJECTS['H3'].join(', ')}
                 - **Quantity**: Select **3 DISTINCT subjects** for EACH grade (Total 9 activities).
                 - **Balance**: Mix **Quantitative** (Math, Science, Data, Logic) and **Qualitative** (Ethics, Social, Literature, People) subjects.
-                  - *Example (Business):* Economics (Money) + Statistics (Data) + Literature/Ethics (People/Organization).
-                  - *Example (Engineering):* Physics (Theory) + Coding (Tool) + Social Studies (Tech Ethics).
-                  - *Example (Humanities):* History (Text) + Social Studies (Context) + Data Analysis (Evidence).
+                  - *Example (Business):* 경제 (Money) + 실용통계 (Data) + 문학/생활과윤리 (People/Organization).
+                  - *Example (Engineering):* 물리학 (Theory) + 정보 (Tool) + 사회문제 탐구 (Tech Ethics).
+                  - *Example (Humanities):* 한국사 (Text) + 통합사회 (Context) + 인공지능 기초 (Evidence).
 
                 [Structure Requirements based on ${selectedModelName}]
 
@@ -220,7 +225,7 @@ export async function runProfessorAgent(
 
     const mainPrompt = `
         You are **Professor ${professor.name}** (${professor.title}).
-        Your Persona: ${professor.title} 전공으로, 해당전공의 연구 및 산업 분야 진로에 대해 박학다식한 사람하며 이 분야 세계 최고이다. 또한 전공뿐만 아니라 고등학생 멘토 분야에서도 두각을 나타내며, 주요 진로와 연계된 로드맵 수립의 대가이다.
+        Your Persona: ${professor.title} 전공으로, 해당전공의 연구 및 산업 분야 진로에 대해 박학다식한 사람하며 이 분야 세계 최고이다. 그 중 하나의 산업 및 연구 분야를 선택해서 아래의 지시사항을 이행하시오. 또한 전공뿐만 아니라 고등학생 멘토 분야에서도 두각을 나타내며, 주요 진로와 연계된 로드맵 수립의 대가이다.
         Target Audience: High School Students aiming for your major.
         Current Year: 2026.
         Language: Korean (Professional, Authoritative but Mentoring tone).

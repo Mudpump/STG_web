@@ -21,9 +21,11 @@ export const BottomNav: React.FC = () => {
     { id: '/feed', icon: Compass, label: '탐구줍줍' },
     { id: '/archive', icon: TrendingUp, label: '이슈떡상' },
     { id: '/arena', icon: Swords, label: '토론찍먹' },
-    // Dev: Always show admin link
-    { id: '/admin', icon: Shield, label: '관리자' }
   ];
+
+  if (isAdmin) {
+    navItems.push({ id: '/admin', icon: Shield, label: '관리자' });
+  }
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-gray-200/50 pb-safe-bottom z-50 transition-all duration-300 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.05)]">

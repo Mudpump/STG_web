@@ -15,6 +15,7 @@ import { CategoryId, GradeType } from './types';
 import { StoreProvider, useStore } from './context/StoreContext';
 import { WritePostPage } from './pages/WritePostPage';
 import { AdminPage } from './pages/AdminPage';
+import { AdminRoute } from './components/AdminRoute';
 import { SearchPage } from './pages/SearchPage';
 import { LoginModal } from './components/LoginModal';
 import { MyCard } from './components/MyCard';
@@ -930,7 +931,7 @@ const MyPage: React.FC = () => {
     const [activeList, setActiveList] = useState<'NONE' | 'MY_POSTS' | 'SAVED_POSTS'>('NONE');
 
     // Calculate Stats
-    const myPosts = posts.filter(p => p.isUser);
+    const myPosts = posts.filter(p => p.isUser && p.uid === currentUser?.uid);
     const myPostCount = myPosts.length;
 
     // Get Saved Posts
@@ -1185,7 +1186,7 @@ export default function App() {
                         <Route path="break" element={<BreakPage />} />
                         <Route path="search" element={<SearchPage />} />
                         <Route path="write" element={<WritePostPage />} />
-                        <Route path="admin" element={<AdminPage />} />
+                        <Route path="admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
                         <Route path="my" element={<MyPage />} />
                     </Route>
                 </Routes>
