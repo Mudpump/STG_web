@@ -155,7 +155,7 @@ export const ArenaCard: React.FC<Props> = ({ item }) => {
       <div className="flex items-center pt-4 border-t border-gray-100 gap-5 text-slate-400">
         <div className="flex items-center gap-2">
           <MessageCircle size={18} strokeWidth={2} />
-          <span className="text-[15px] font-bold">{item.comments.length}</span>
+          <span className="text-[15px] font-bold">{item.commentCount ?? item.comments.length}</span>
         </div>
         <button
           onClick={handleLike}

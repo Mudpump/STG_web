@@ -238,7 +238,11 @@ const HomePage: React.FC = () => {
 const MajorIntroPage: React.FC = () => {
     const { professorId } = useParams<{ professorId: string }>();
     const navigate = useNavigate();
-    const { posts, followedProfessorIds, toggleFollowProfessor, currentUser, openLoginModal, isAdmin, deletePost } = useStore();
+    const { posts, followedProfessorIds, toggleFollowProfessor, currentUser, openLoginModal, isAdmin, deletePost, fetchPosts } = useStore();
+
+    useEffect(() => {
+        fetchPosts();
+    }, []);
 
     // [FIX] 탭 상태를 3가지로 확장 (BOARD, COUNSELING, INFO)
     const [activeTab, setActiveTab] = useState<'BOARD' | 'COUNSELING' | 'INFO'>('BOARD');
@@ -879,7 +883,33 @@ const FeedPage: React.FC = () => {
 };
 
 const ArchivePage: React.FC = () => {
-    const { trends } = useStore();
+    const { trendListItems, trendHasMore, trendLoading, fetchTrendList, resetTrendList } = useStore();
+    const [page, setPage] = useState(1);
+
+    useEffect(() => {
+        resetTrendList();
+        setPage(1);
+    }, []);
+
+    useEffect(() => {
+        fetchTrendList({ page });
+    }, [page]);
+
+    // IntersectionObserver로 무한 스크롤
+    const sentinelRef = React.useRef<HTMLDivElement | null>(null);
+    useEffect(() => {
+        if (!sentinelRef.current) return;
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && trendHasMore && !trendLoading) {
+                    setPage(prev => prev + 1);
+                }
+            },
+            { rootMargin: '200px' }
+        );
+        observer.observe(sentinelRef.current);
+        return () => observer.disconnect();
+    }, [trendHasMore, trendLoading]);
 
     return (
         <div className="p-4 md:p-0">
@@ -887,31 +917,102 @@ const ArchivePage: React.FC = () => {
             <LeaderboardWidget />
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-                {trends.map(item => (
+                {trendListItems.map(item => (
                     <TrendCard key={item.id} item={item} />
                 ))}
+
+                {/* Loading Spinner */}
+                {trendLoading && (
+                    <div className="flex justify-center items-center py-10 col-span-full">
+                        <div className="w-7 h-7 border-3 border-gray-200 border-t-primary rounded-full animate-spin"></div>
+                    </div>
+                )}
+
+                {/* End of List */}
+                {!trendLoading && !trendHasMore && trendListItems.length > 0 && (
+                    <div className="text-center py-10 text-gray-400 text-sm col-span-full">
+                        <span className="text-lg mr-1">📭</span> 게시글을 모두 불러왔습니다.
+                    </div>
+                )}
+
+                {/* Empty State */}
+                {!trendLoading && trendListItems.length === 0 && (
+                    <div className="p-20 text-center text-gray-400 text-sm flex flex-col items-center gap-2 col-span-full">
+                        <span className="text-4xl">📭</span>
+                        등록된 이슈떡상이 없습니다.
+                    </div>
+                )}
+
+                {/* Infinite Scroll Sentinel */}
+                <div ref={sentinelRef} className="h-1 col-span-full" />
             </div>
         </div>
     );
 };
 
 const ArenaPage: React.FC = () => {
-    const { votes } = useStore();
+    const { voteListItems, voteHasMore, voteLoading, fetchVoteList, resetVoteList } = useStore();
+    const [page, setPage] = useState(1);
+
+    useEffect(() => {
+        resetVoteList();
+        setPage(1);
+    }, []);
+
+    useEffect(() => {
+        fetchVoteList({ page });
+    }, [page]);
+
+    // IntersectionObserver로 무한 스크롤
+    const sentinelRef = React.useRef<HTMLDivElement | null>(null);
+    useEffect(() => {
+        if (!sentinelRef.current) return;
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && voteHasMore && !voteLoading) {
+                    setPage(prev => prev + 1);
+                }
+            },
+            { rootMargin: '200px' }
+        );
+        observer.observe(sentinelRef.current);
+        return () => observer.disconnect();
+    }, [voteHasMore, voteLoading]);
+
     return (
         <div className="p-4 md:p-0">
             {/* 헤더 섹션 제거됨 -> Desktop Nav 렌더링으로 위임 */}
             <div className="md:grid md:grid-cols-12 md:gap-6 md:mt-8">
                 <div className="md:col-span-12 lg:col-span-8">
                     <div className="bg-gray-50 min-h-[calc(100vh-180px)]">
-                        {votes.map(item => (
+                        {voteListItems.map(item => (
                             <ArenaCard key={item.id} item={item} />
                         ))}
-                        {votes.length === 0 && (
+
+                        {/* Loading Spinner */}
+                        {voteLoading && (
+                            <div className="flex justify-center items-center py-10">
+                                <div className="w-7 h-7 border-3 border-gray-200 border-t-primary rounded-full animate-spin"></div>
+                            </div>
+                        )}
+
+                        {/* End of List */}
+                        {!voteLoading && !voteHasMore && voteListItems.length > 0 && (
+                            <div className="text-center py-10 text-gray-400 text-sm">
+                                <span className="text-lg mr-1">📭</span> 토론을 모두 불러왔습니다.
+                            </div>
+                        )}
+
+                        {/* Empty State */}
+                        {!voteLoading && voteListItems.length === 0 && (
                             <div className="p-20 text-center text-gray-400 text-sm flex flex-col items-center gap-2">
                                 <span className="text-4xl">📭</span>
                                 등록된 토론이 없습니다.
                             </div>
                         )}
+
+                        {/* Infinite Scroll Sentinel */}
+                        <div ref={sentinelRef} className="h-1" />
                     </div>
                 </div>
 

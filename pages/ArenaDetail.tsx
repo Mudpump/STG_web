@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MessageCircle, Swords, Send, Heart, Trash2, Share2, CornerDownRight, Users, CheckCircle2 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
@@ -10,7 +10,7 @@ export const ArenaDetail: React.FC = () => {
     const {
         votes, addVoteComment, addVoteReply, deleteVoteComment, isAdmin,
         toggleLikeComment, likedCommentIds,
-        toggleLikeVote, likedVoteIds, deleteVote, castVote, currentUser, openLoginModal
+        toggleLikeVote, likedVoteIds, deleteVote, castVote, currentUser, openLoginModal, fetchVoteComments
     } = useStore();
 
     // Removed local voted state
@@ -20,6 +20,12 @@ export const ArenaDetail: React.FC = () => {
 
     // 상태
     const [isLiking, setIsLiking] = useState(false);
+
+    useEffect(() => {
+        if (id) {
+            fetchVoteComments(id);
+        }
+    }, [id]);
 
     const voteItem = votes.find(v => v.id === id);
 
@@ -101,7 +107,7 @@ export const ArenaDetail: React.FC = () => {
 
             <div className="px-6 pt-4 pb-6">
                 <h1 className="text-[24px] font-black text-gray-900 mb-3 tracking-tight leading-snug">{voteItem.title}</h1>
-                <p className="text-[16px] text-[#222222] leading-relaxed mb-6 font-medium">{voteItem.description}</p>
+                <p className="text-lg text-[#222222] leading-relaxed mb-6 font-medium">{voteItem.description}</p>
 
                 {/* 투표 선택 영역 */}
                 <div className="mb-8">
@@ -246,7 +252,7 @@ export const ArenaDetail: React.FC = () => {
                                             )}
                                         </div>
                                     </div>
-                                    <p className="text-sm text-gray-700 leading-relaxed font-medium">
+                                    <p className="text-base text-gray-700 leading-relaxed font-medium">
                                         {comment.text}
                                     </p>
                                     <div className="mt-2 flex items-center gap-3">

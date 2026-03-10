@@ -9,8 +9,6 @@ import { formatTimeAgo } from '../utils/dateUtils';
 import { CATEGORIES, PROFESSORS } from '../constants'; // Import CATEGORIES for iteration
 import { ProfessorTheme } from '../agents/professorAgents'; // Type import
 
-// 관리자 이메일 목록 — 이 목록에 포함된 이메일로 로그인하면 자동으로 관리자 권한을 부여합니다.
-const ADMIN_EMAILS = ['mudpump.woo@gmail.com'];
 
 // Import Dummy Data
 import { FEED_DATA } from '../data/feedData';
@@ -42,6 +40,7 @@ interface StoreContextType {
   fetchLeaderboard: () => Promise<void>;
 
   posts: Post[];
+  fetchPosts: () => Promise<void>;
   addPost: (post: Omit<Post, 'id' | 'createdAt' | 'viewCount' | 'likeCount' | 'comments' | 'authorRole'>) => void;
   deletePost: (id: string) => void;
   addComment: (postId: string, text: string) => void;
@@ -57,19 +56,37 @@ interface StoreContextType {
   resetFeedPosts: () => void;
 
   trends: TrendItem[];
+  fetchTrends: () => Promise<void>;
   addTrend: (trend: Omit<TrendItem, 'id' | 'createdAt' | 'viewCount' | 'likeCount' | 'comments'>) => void;
   deleteTrend: (id: string) => void;
   addTrendComment: (trendId: string, text: string) => void;
   addTrendReply: (trendId: string, parentCommentId: number | string, text: string) => void;
   deleteTrendComment: (trendId: string, commentId: number | string) => void;
+  fetchTrendComments: (trendId: string) => Promise<void>;
+
+  // [Pagination] Trend 리스트 전용
+  trendListItems: TrendItem[];
+  trendHasMore: boolean;
+  trendLoading: boolean;
+  fetchTrendList: (params: { page: number }) => Promise<void>;
+  resetTrendList: () => void;
 
   votes: VoteItem[];
+  fetchVotes: () => Promise<void>;
   addVote: (vote: Omit<VoteItem, 'id' | 'votesA' | 'votesB' | 'comments' | 'likeCount'>) => void;
   deleteVote: (id: string) => void;
   castVote: (voteId: string, choice: 'A' | 'B') => void; // New method
   addVoteComment: (voteId: string, text: string) => void;
   addVoteReply: (voteId: string, parentCommentId: number | string, text: string) => void;
   deleteVoteComment: (voteId: string, commentId: number | string) => void;
+  fetchVoteComments: (voteId: string) => Promise<void>;
+
+  // [Pagination] Vote 리스트 전용
+  voteListItems: VoteItem[];
+  voteHasMore: boolean;
+  voteLoading: boolean;
+  fetchVoteList: (params: { page: number }) => Promise<void>;
+  resetVoteList: () => void;
 
   toggleLikePost: (id: string) => void;
   likedPostIds: Set<string>;
@@ -150,6 +167,16 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [feedPosts, setFeedPosts] = useState<Post[]>([]);
   const [feedHasMore, setFeedHasMore] = useState(true);
   const [feedLoading, setFeedLoading] = useState(false);
+
+  // [Pagination] Trend 리스트 전용 상태
+  const [trendListItems, setTrendListItems] = useState<TrendItem[]>([]);
+  const [trendHasMore, setTrendHasMore] = useState(true);
+  const [trendLoading, setTrendLoading] = useState(false);
+
+  // [Pagination] Vote 리스트 전용 상태
+  const [voteListItems, setVoteListItems] = useState<VoteItem[]>([]);
+  const [voteHasMore, setVoteHasMore] = useState(true);
+  const [voteLoading, setVoteLoading] = useState(false);
 
   const [isAdmin, setIsAdmin] = useState(false);
   const [pendingScenarios, setPendingScenarios] = useState<PendingScenario[]>([]);
@@ -272,6 +299,38 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     } catch (e) {
       console.error("Error fetching specific post comments:", e);
     }
+  };
+
+  const fetchTrendComments = async (trendId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .select('*')
+        .eq('trend_id', trendId)
+        .order('created_at', { ascending: true });
+
+      if (!error && data) {
+        setTrends(prev => prev.map(t =>
+          t.id === trendId ? { ...t, comments: buildCommentTree(data) } : t
+        ));
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const fetchVoteComments = async (voteId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .select('*')
+        .eq('vote_id', voteId)
+        .order('created_at', { ascending: true });
+
+      if (!error && data) {
+        setVotes(prev => prev.map(v =>
+          v.id === voteId ? { ...v, comments: buildCommentTree(data) } : v
+        ));
+      }
+    } catch (e) { console.error(e); }
   };
 
   // [Pagination] Feed 전용 페이지네이션 함수
@@ -418,6 +477,175 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setFeedPosts([]);
     setFeedHasMore(true);
     setFeedLoading(false);
+  };
+
+  // [Pagination] Trend 리스트 전용 페이지네이션 함수
+  const TREND_PAGE_SIZE = 20;
+
+  const fetchTrendList = async (params: { page: number }) => {
+    setTrendLoading(true);
+    try {
+      const from = (params.page - 1) * TREND_PAGE_SIZE;
+      const to = from + TREND_PAGE_SIZE - 1;
+
+      const { data, count, error } = await supabase
+        .from('trends')
+        .select('id, title, summary, target_major, keyword, image_url, content, se_teuk_tip, view_count, like_count, created_at, quizzes', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (error) {
+        console.error('Trend list pagination error:', error);
+        setTrendLoading(false);
+        return;
+      }
+
+      // 댓글 개수만 조회 (본문 불필요)
+      const trendIds = (data || []).map((d: any) => d.id);
+      let commentCounts: Record<string, number> = {};
+      if (trendIds.length > 0) {
+        const { data: ccData } = await supabase
+          .from('comments')
+          .select('trend_id')
+          .in('trend_id', trendIds);
+        if (ccData) {
+          ccData.forEach((c: any) => {
+            commentCounts[c.trend_id] = (commentCounts[c.trend_id] || 0) + 1;
+          });
+        }
+      }
+
+      const mappedTrends: TrendItem[] = (data || []).map((d: any) => ({
+        id: d.id, title: d.title, summary: d.summary || [], targetMajor: d.target_major, keyword: d.keyword, imageUrl: d.image_url,
+        content: d.content, seTeukTip: d.se_teuk_tip, comments: [],
+        commentCount: commentCounts[d.id] || 0,
+        viewCount: d.view_count || 0, likeCount: d.like_count || 0, createdAt: formatTimeAgo(d.created_at), quizzes: d.quizzes
+      }));
+
+      // [FIX] 동기화 문제 해결: Trend 목록에 있는 게시물이 전역 trends에 즉시 반영되도록 병합
+      setTrends(prev => {
+        let updated = false;
+        const newTrends = [...prev];
+        mappedTrends.forEach(mt => {
+          if (!newTrends.some(t => t.id.toString() === mt.id.toString())) {
+            newTrends.push(mt);
+            updated = true;
+          }
+        });
+        return updated ? newTrends : prev;
+      });
+
+      if (params.page === 1) {
+        setTrendListItems([...mappedTrends, ...ARCHIVE_DATA]);
+      } else {
+        setTrendListItems(prev => [...prev, ...mappedTrends]);
+      }
+
+      setTrendHasMore((params.page * TREND_PAGE_SIZE) < (count || 0));
+    } catch (e) {
+      console.error('Trend list pagination error:', e);
+    } finally {
+      setTrendLoading(false);
+    }
+  };
+
+  const resetTrendList = () => {
+    setTrendListItems([]);
+    setTrendHasMore(true);
+    setTrendLoading(false);
+  };
+
+  // [Pagination] Vote 리스트 전용 페이지네이션 함수
+  const VOTE_PAGE_SIZE = 20;
+
+  const fetchVoteList = async (params: { page: number }) => {
+    setVoteLoading(true);
+    try {
+      const from = (params.page - 1) * VOTE_PAGE_SIZE;
+      const to = from + VOTE_PAGE_SIZE - 1;
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const currentUid = sessionData.session?.user?.id;
+
+      const { data, count, error } = await supabase
+        .from('votes')
+        .select('id, title, description, option_a, option_b, votes_a, votes_b, like_count, created_at', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (error) {
+        console.error('Vote list pagination error:', error);
+        setVoteLoading(false);
+        return;
+      }
+
+      // 댓글 개수만 조회
+      const voteIds = (data || []).map((d: any) => d.id);
+      let commentCounts: Record<string, number> = {};
+      if (voteIds.length > 0) {
+        const { data: ccData } = await supabase
+          .from('comments')
+          .select('vote_id')
+          .in('vote_id', voteIds);
+        if (ccData) {
+          ccData.forEach((c: any) => {
+            commentCounts[c.vote_id] = (commentCounts[c.vote_id] || 0) + 1;
+          });
+        }
+      }
+
+      // 투표 이력 조회
+      let userHistory: any[] = [];
+      if (currentUid) {
+        const { data: hData } = await supabase.from('vote_history').select('vote_id, choice').eq('user_id', currentUid);
+        userHistory = hData || [];
+      }
+
+      const mappedVotes: VoteItem[] = (data || []).map((d: any) => {
+        const historyItem = userHistory.find(h => h.vote_id === d.id);
+        return {
+          id: d.id, title: d.title, description: d.description, optionA: d.option_a, optionB: d.option_b,
+          votesA: d.votes_a || 0, votesB: d.votes_b || 0, likeCount: d.like_count || 0, comments: [],
+          commentCount: commentCounts[d.id] || 0,
+          myVote: historyItem ? historyItem.choice as 'A' | 'B' : undefined
+        };
+      });
+
+      // [FIX] 동기화 문제 해결: Vote 목록에 있는 게시물이 전역 votes에 즉시 반영되도록 병합
+      setVotes(prev => {
+        let updated = false;
+        const newVotes = [...prev];
+        mappedVotes.forEach(mv => {
+          if (!newVotes.some(v => v.id.toString() === mv.id.toString())) {
+            newVotes.push(mv);
+            updated = true;
+          }
+        });
+        return updated ? newVotes : prev;
+      });
+
+      if (params.page === 1) {
+        const mappedArenaData = ARENA_DATA.map(v => {
+          const historyItem = userHistory.find(h => h.vote_id === v.id);
+          return historyItem ? { ...v, myVote: historyItem.choice as 'A' | 'B' } : v;
+        });
+        setVoteListItems([...mappedVotes, ...mappedArenaData]);
+      } else {
+        setVoteListItems(prev => [...prev, ...mappedVotes]);
+      }
+
+      setVoteHasMore((params.page * VOTE_PAGE_SIZE) < (count || 0));
+    } catch (e) {
+      console.error('Vote list pagination error:', e);
+    } finally {
+      setVoteLoading(false);
+    }
+  };
+
+  const resetVoteList = () => {
+    setVoteListItems([]);
+    setVoteHasMore(true);
+    setVoteLoading(false);
   };
 
   // ... (Other Fetch functions same as before) ...
@@ -691,9 +919,6 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           return;
         }
 
-        // 관리자 이메일 자동 판별
-        const userEmail = session.user.email || '';
-        setIsAdmin(ADMIN_EMAILS.includes(userEmail));
 
         const user: User = {
           uid: session.user.id,
@@ -750,9 +975,9 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     });
     fetchPosts(); fetchTrends(); fetchVotes(); fetchLeaderboard(); fetchWeeklyProgress();
     const channel = supabase.channel('public_db_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, fetchPosts)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'trends' }, fetchTrends)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, fetchVotes)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => { fetchPosts(); fetchFeedPosts({ page: 1 }); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'trends' }, () => { fetchTrends(); fetchTrendList({ page: 1 }); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, () => { fetchVotes(); fetchVoteList({ page: 1 }); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_scores' }, fetchWeeklyProgress)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'user_answers' }, () => { fetchLeaderboard(); fetchWeeklyProgress(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload) => {
@@ -769,7 +994,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }
         fetchLeaderboard();
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, () => { fetchPosts(); fetchTrends(); fetchVotes(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, () => { fetchPosts(); fetchTrends(); fetchVotes(); fetchFeedPosts({ page: 1 }); fetchTrendList({ page: 1 }); fetchVoteList({ page: 1 }); })
       .subscribe();
     return () => { subscription.unsubscribe(); supabase.removeChannel(channel); };
   }, []);
@@ -1114,8 +1339,10 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   return (
     <StoreContext.Provider value={{
       currentUser, loginWithGoogle, loginWithEmail, signupWithEmail, checkNickname, logout, updateUserProfile, isLoginModalOpen, openLoginModal, closeLoginModal,
-      posts, addPost, deletePost, addComment, addPostReply, deleteComment, fetchPostComments, trends, addTrend, deleteTrend, addTrendComment, addTrendReply, deleteTrendComment, votes, addVote, deleteVote, castVote, addVoteComment, addVoteReply, deleteVoteComment,
+      posts, fetchPosts, addPost, deletePost, addComment, addPostReply, deleteComment, fetchPostComments, trends, fetchTrends, addTrend, deleteTrend, addTrendComment, addTrendReply, deleteTrendComment, fetchTrendComments, votes, fetchVotes, addVote, deleteVote, castVote, addVoteComment, addVoteReply, deleteVoteComment, fetchVoteComments,
       feedPosts, feedHasMore, feedLoading, fetchFeedPosts, resetFeedPosts,
+      trendListItems, trendHasMore, trendLoading, fetchTrendList, resetTrendList,
+      voteListItems, voteHasMore, voteLoading, fetchVoteList, resetVoteList,
       toggleLikePost, likedPostIds, toggleLikeTrend, likedTrendIds, toggleLikeVote, likedVoteIds, toggleSavePost, savedPostIds, toggleLikeComment, likedCommentIds, isAdmin, toggleAdmin, incrementViewCount,
       pendingScenarios, generateAIPost, generateAIPostAllCategories, generateCustomPost, generateRoadmapPost, generateProfessorPost, generateAITrend, generateSourceTrend, generateSearchTrend, generateAIVote, generateAIEpisode, approveItem, approveComment, discardScenario,
       addPoints, leaderboard, schoolLeaderboard, userRank, weeklyProgress, submitQuizAnswer, fetchLeaderboard, toggleFollowProfessor, followedProfessorIds,

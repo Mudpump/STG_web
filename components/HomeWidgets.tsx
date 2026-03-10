@@ -108,8 +108,8 @@ export const StrategySection: React.FC = () => {
               {guide.icon}
             </div>
             <div className="min-w-0">
-              <h4 className="font-bold text-gray-900 text-sm truncate group-hover:text-primary transition-colors">{guide.title}</h4>
-              <p className="text-[11px] text-gray-500 font-medium truncate">{guide.desc}</p>
+              <h4 className="font-bold text-gray-900 text-[17px] truncate group-hover:text-primary transition-colors">{guide.title}</h4>
+              <p className="text-sm text-gray-500 font-medium truncate">{guide.desc}</p>
             </div>
           </div>
         ))}

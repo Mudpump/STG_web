@@ -115,6 +115,7 @@ export interface TrendItem {
   content: string;
   seTeukTip: string;
   comments: Comment[];
+  commentCount?: number; // [Pagination] 리스트에서 댓글 개수만 표시할 때 사용
   viewCount: number;
   likeCount: number;
   createdAt: string;
@@ -132,6 +133,7 @@ export interface VoteItem {
   votesB: number;
   likeCount: number;
   comments: Comment[];
+  commentCount?: number; // [Pagination] 리스트에서 댓글 개수만 표시할 때 사용
   timestamp?: any;
   myVote?: 'A' | 'B'; // Added: Current user's vote status
 }
