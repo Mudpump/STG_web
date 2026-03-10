@@ -354,7 +354,7 @@ export function runAgentC(scenarioData: any, categoryId: CategoryId, author: Age
     content: scenarioData.post.content,
     previewText: scenarioData.post.content.substring(0, 60) + '...',
     comments: formattedComments,
-    viewCount: Math.floor(Math.random() * 200) + 10,
+    viewCount: Math.floor(Math.random() * 6) + 15, // 15 to 20
     likeCount: Math.floor(Math.random() * 20),
     createdAt: `${postOffsetMins}분 전`,
     tags: scenarioData.post.tags || ['세특'],

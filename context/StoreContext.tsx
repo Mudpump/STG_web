@@ -1256,7 +1256,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       let dbId = '';
       if (scenario.type === 'FEED' && scenario.postData) {
         const { data, error } = await supabase.from('posts').insert({
-          title: scenario.postData.title, content: scenario.postData.content, category_id: scenario.postData.categoryId, author_agent: scenario.postData.authorAgent, author_role: scenario.postData.authorRole, preview_text: scenario.postData.previewText, tags: scenario.postData.tags, is_user: false, target_grade: scenario.postData.targetGrade, like_count: scenario.postData.likeCount, episode_type: scenario.postData.episodeType
+          title: scenario.postData.title, content: scenario.postData.content, category_id: scenario.postData.categoryId, author_agent: scenario.postData.authorAgent, author_role: scenario.postData.authorRole, preview_text: scenario.postData.previewText, tags: scenario.postData.tags, is_user: false, target_grade: scenario.postData.targetGrade, like_count: scenario.postData.likeCount, episode_type: scenario.postData.episodeType, view_count: scenario.postData.viewCount
         }).select().single();
         if (error) throw error;
         dbId = data.id;
@@ -1270,7 +1270,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         await fetchTrends();
       } else if (scenario.type === 'VOTE' && scenario.voteData) {
         const { data, error } = await supabase.from('votes').insert({
-          title: scenario.voteData.title, description: scenario.voteData.description, option_a: scenario.voteData.optionA, option_b: scenario.voteData.optionB, like_count: scenario.voteData.likeCount
+          title: scenario.voteData.title, description: scenario.voteData.description, option_a: scenario.voteData.optionA, option_b: scenario.voteData.optionB, like_count: scenario.voteData.likeCount, votes_a: scenario.voteData.votesA, votes_b: scenario.voteData.votesB
         }).select().single();
         if (error) throw error;
         dbId = data.id;

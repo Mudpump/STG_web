@@ -133,5 +133,9 @@ export const runVoteAgents = async (log: (msg: string) => void): Promise<any> =>
         isUser: false
     }));
 
-    return { ...result, votesA: 0, votesB: 0, likeCount: Math.floor(Math.random() * 30) + 5, comments: generatedComments };
+    const totalVotes = Math.floor(Math.random() * 6) + 15; // 15 to 20명
+    const votesA = Math.floor(totalVotes / 2) + (Math.random() > 0.5 ? 1 : 0);
+    const votesB = totalVotes - votesA;
+
+    return { ...result, votesA, votesB, likeCount: Math.floor(Math.random() * 30) + 5, comments: generatedComments };
 };
