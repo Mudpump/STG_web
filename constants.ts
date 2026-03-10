@@ -3,7 +3,7 @@ import { Category, Professor, MajorDetail } from './types';
 
 export const CATEGORIES: Category[] = [
   { id: 'ALL', name: '전체' },
-  { id: 'MY_PROFS', name: '나의 교수' },
+  { id: 'MY_PROFS', name: '나의 교수 ⭐️' },
   { id: 'ELEC_SEMI', name: '전기·전자·반도체' },
   { id: 'CS_AI', name: '컴퓨터·SW·AI' },
   { id: 'MECH_ROBOT', name: '기계·로봇·모빌리티' },

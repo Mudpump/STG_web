@@ -132,11 +132,13 @@ export async function runProfessorAgent(
                   - **Grade 1 (H1)**: ${GRADE_SUBJECTS['H1'].join(', ')}
                   - **Grade 2 (H2)**: ${GRADE_SUBJECTS['H2'].join(', ')}
                   - **Grade 3 (H3)**: ${GRADE_SUBJECTS['H3'].join(', ')}
+                - **[CRITICAL: STRICT NAME MATCHING]**: You MUST use the EXACT subject name as provided in the lists above. Do NOT abbreviate, interpret, or hallucinate subject names (e.g., Do NOT write "물리1" or "물리Ⅰ" if the list says "물리학". Do NOT write "미적분1" if the list says "미적분Ⅰ").
                 - **Quantity**: Select **3 DISTINCT subjects** for EACH grade (Total 9 activities).
                 - **Balance**: Mix **Quantitative** (Math, Science, Data, Logic) and **Qualitative** (Ethics, Social, Literature, People) subjects.
                   - *Example (Business):* 경제 (Money) + 실용통계 (Data) + 문학/생활과윤리 (People/Organization).
                   - *Example (Engineering):* 물리학 (Theory) + 정보 (Tool) + 사회문제 탐구 (Tech Ethics).
                   - *Example (Humanities):* 한국사 (Text) + 통합사회 (Context) + 인공지능 기초 (Evidence).
+                - **Contextual Linkage**: Ensure that the chosen subject perfectly matches the narrative you are building. The activity MUST be realistically achievable within that specific subject's curriculum.
 
                 [Structure Requirements based on ${selectedModelName}]
 

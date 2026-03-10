@@ -275,7 +275,14 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
       // Merge DB posts with Dummy posts (Ensure Dummy posts are always present)
       setPosts(prev => {
-        return [...loadedPosts, ...FEED_DATA];
+        const tempPosts = prev.filter(p => String(p.id).startsWith('temp-'));
+        const newPosts = [...tempPosts, ...loadedPosts, ...FEED_DATA];
+        const seen = new Set();
+        return newPosts.filter(p => {
+          if (seen.has(p.id)) return false;
+          seen.add(p.id);
+          return true;
+        });
       });
 
     } catch (e) { console.error(e); }
@@ -664,7 +671,16 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }));
       }
       if (currentFetchId !== latestFetchTrendsId) return;
-      setTrends([...loadedTrends, ...ARCHIVE_DATA]);
+      setTrends(prev => {
+        const tempTrends = prev.filter(t => String(t.id).startsWith('temp-'));
+        const newTrends = [...tempTrends, ...loadedTrends, ...ARCHIVE_DATA];
+        const seen = new Set();
+        return newTrends.filter(t => {
+          if (seen.has(t.id)) return false;
+          seen.add(t.id);
+          return true;
+        });
+      });
     } catch (e) { console.error(e); }
   };
 
@@ -706,9 +722,27 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
       if (currentFetchId !== latestFetchVotesId) return;
       if (finalVotes.length > 0) {
-        setVotes(finalVotes);
+        setVotes(prev => {
+          const tempVotes = prev.filter(v => String(v.id).startsWith('temp-'));
+          const newVotes = [...tempVotes, ...finalVotes];
+          const seen = new Set();
+          return newVotes.filter(v => {
+            if (seen.has(v.id)) return false;
+            seen.add(v.id);
+            return true;
+          });
+        });
       } else {
-        setVotes(ARENA_DATA);
+        setVotes(prev => {
+          const tempVotes = prev.filter(v => String(v.id).startsWith('temp-'));
+          const newVotes = [...tempVotes, ...ARENA_DATA];
+          const seen = new Set();
+          return newVotes.filter(v => {
+            if (seen.has(v.id)) return false;
+            seen.add(v.id);
+            return true;
+          });
+        });
       }
     } catch (e) { console.error(e); }
   };
@@ -957,6 +991,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 displayName: profile.nickname || prev.displayName,
                 grade: profile.grade || prev.grade,
                 hopeMajor: profile.hope_major || undefined,
+                hopeJob: profile.hope_job || undefined,
                 careerGoal: profile.career_goal || undefined,
                 schoolId: profile.school_id || undefined,
                 schoolName: schoolNameObj?.school_name || undefined
@@ -989,6 +1024,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             displayName: profile.nickname || prev.displayName,
             grade: profile.grade || prev.grade,
             hopeMajor: profile.hope_major || prev.hopeMajor,
+            hopeJob: profile.hope_job || prev.hopeJob,
             careerGoal: profile.career_goal || prev.careerGoal
           } : null);
         }
@@ -1030,7 +1066,12 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }).select().single();
 
     if (data && !error) {
-      setPosts(prev => prev.map(p => p.id === tempId ? { ...p, id: data.id } : p));
+      setPosts(prev => {
+        if (prev.some(p => String(p.id) === String(data.id))) {
+          return prev.filter(p => p.id !== tempId);
+        }
+        return prev.map(p => p.id === tempId ? { ...p, id: data.id } : p);
+      });
     } else {
       console.error(error);
       fetchPosts();
@@ -1076,12 +1117,44 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   // ... (Trend, Vote Actions - kept same) ...
-  const addTrend = async (trend: any) => await supabase.from('trends').insert({ title: trend.title, target_major: trend.targetMajor, keyword: trend.keyword, image_url: trend.imageUrl, summary: trend.summary, content: trend.content, se_teuk_tip: trend.seTeukTip });
+  const addTrend = async (trend: any) => {
+    const tempId = `temp-${Date.now()}`;
+    const optimisticTrend: TrendItem = {
+      id: tempId, title: trend.title, summary: trend.summary, targetMajor: trend.targetMajor, keyword: trend.keyword, imageUrl: trend.imageUrl, content: trend.content, seTeukTip: trend.seTeukTip, comments: [], commentCount: 0, viewCount: 0, likeCount: 0, createdAt: '방금 전'
+    };
+    setTrends(prev => [optimisticTrend, ...prev]);
+    const { data, error } = await supabase.from('trends').insert({ title: trend.title, target_major: trend.targetMajor, keyword: trend.keyword, image_url: trend.imageUrl, summary: trend.summary, content: trend.content, se_teuk_tip: trend.seTeukTip }).select().single();
+    if (data && !error) {
+      setTrends(prev => {
+        if (prev.some(t => String(t.id) === String(data.id))) return prev.filter(t => t.id !== tempId);
+        return prev.map(t => t.id === tempId ? { ...t, id: data.id } : t);
+      });
+    } else {
+      console.error(error);
+      fetchTrends();
+    }
+  };
   const deleteTrend = async (id: string) => { setTrends(prev => prev.filter(t => t.id !== id)); await supabase.from('comments').delete().eq('trend_id', id); const { error, data } = await supabase.from('trends').delete().eq('id', id).select(); if (error || !data || data.length === 0) { fetchTrends(); } };
   const addTrendComment = async (id: string, text: string) => { if (!currentUser) return; const newComment: Comment = { id: Date.now().toString(), agentName: currentUser.displayName || '학생', role: 'User', text, likes: 0, createdAt: '방금 전', isUser: true, uid: currentUser.uid, replies: [] }; setTrends(prev => prev.map(t => t.id === id ? { ...t, comments: [...t.comments, newComment] } : t)); const { error } = await supabase.from('comments').insert({ trend_id: id, agent_name: currentUser.displayName, role: 'User', text, is_user: true, uid: currentUser.uid }); if (error) { fetchTrends(); } };
   const addTrendReply = async (id: string, pid: string | number, text: string) => { if (!currentUser) return; const newReply: Comment = { id: Date.now().toString(), agentName: currentUser.displayName || '학생', role: 'User', text, likes: 0, createdAt: '방금 전', isUser: true, uid: currentUser.uid, replies: [] }; setTrends(prev => prev.map(t => { if (t.id === id) { const addReply = (comments: Comment[]): Comment[] => comments.map(c => { if (c.id === pid) return { ...c, replies: [...(c.replies || []), newReply] }; if (c.replies) return { ...c, replies: addReply(c.replies) }; return c; }); return { ...t, comments: addReply(t.comments) }; } return t; })); const { error } = await supabase.from('comments').insert({ trend_id: id, parent_comment_id: pid, agent_name: currentUser.displayName, role: 'User', text, is_user: true, uid: currentUser.uid }); if (error) { fetchTrends(); } };
   const deleteTrendComment = async (id: string, cid: string | number) => { const { error, data } = await supabase.from('comments').delete().eq('id', cid).select(); if (error || !data || data.length === 0) { fetchTrends(); } };
-  const addVote = async (vote: any) => await supabase.from('votes').insert({ title: vote.title, description: vote.description, option_a: vote.optionA, option_b: vote.optionB });
+  const addVote = async (vote: any) => {
+    const tempId = `temp-${Date.now()}`;
+    const optimisticVote: VoteItem = {
+      id: tempId, title: vote.title, description: vote.description, optionA: vote.optionA, optionB: vote.optionB, votesA: 0, votesB: 0, likeCount: 0, comments: [], commentCount: 0, myVote: undefined
+    };
+    setVotes(prev => [optimisticVote, ...prev]);
+    const { data, error } = await supabase.from('votes').insert({ title: vote.title, description: vote.description, option_a: vote.optionA, option_b: vote.optionB }).select().single();
+    if (data && !error) {
+      setVotes(prev => {
+        if (prev.some(v => String(v.id) === String(data.id))) return prev.filter(v => v.id !== tempId);
+        return prev.map(v => v.id === tempId ? { ...v, id: data.id } : v);
+      });
+    } else {
+      console.error(error);
+      fetchVotes();
+    }
+  };
   const deleteVote = async (id: string) => { setVotes(prev => prev.filter(v => v.id !== id)); await supabase.from('comments').delete().eq('vote_id', id); const { error, data } = await supabase.from('votes').delete().eq('id', id).select(); if (error || !data || data.length === 0) { fetchVotes(); } };
   const castVote = async (voteId: string, choice: 'A' | 'B') => {
     if (!currentUser) { openLoginModal(); return; }

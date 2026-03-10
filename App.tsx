@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { HashRouter, Routes, Route, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { HashRouter, Routes, Route, Outlet, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { Sidebar } from './components/Sidebar';
@@ -238,6 +238,8 @@ const HomePage: React.FC = () => {
 const MajorIntroPage: React.FC = () => {
     const { professorId } = useParams<{ professorId: string }>();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const tabParam = searchParams.get('tab') as 'BOARD' | 'COUNSELING' | 'INFO' | null;
     const { posts, followedProfessorIds, toggleFollowProfessor, currentUser, openLoginModal, isAdmin, deletePost, fetchPosts } = useStore();
 
     useEffect(() => {
@@ -246,6 +248,12 @@ const MajorIntroPage: React.FC = () => {
 
     // [FIX] 탭 상태를 3가지로 확장 (BOARD, COUNSELING, INFO)
     const [activeTab, setActiveTab] = useState<'BOARD' | 'COUNSELING' | 'INFO'>('BOARD');
+
+    useEffect(() => {
+        if (tabParam && ['BOARD', 'COUNSELING', 'INFO'].includes(tabParam)) {
+            setActiveTab(tabParam);
+        }
+    }, [tabParam]);
 
     const professor = PROFESSORS.find(p => p.id === professorId);
     const majorDetail = professor ? MAJOR_DETAILS[professor.title] || MAJOR_DETAILS[professor.categoryId] : null;
@@ -1031,6 +1039,41 @@ const MyPage: React.FC = () => {
     const { posts, savedPostIds, currentUser, logout, openLoginModal, followedProfessorIds, weeklyProgress, deletePost } = useStore();
     const [activeList, setActiveList] = useState<'NONE' | 'MY_POSTS' | 'SAVED_POSTS'>('NONE');
 
+    const scrollRef = React.useRef<HTMLDivElement>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [startX, setStartX] = useState(0);
+    const [scrollLeft, setScrollLeft] = useState(0);
+    const [dragDistance, setDragDistance] = useState(0);
+
+    const handlePointerDown = (e: React.PointerEvent) => {
+        if (e.pointerType !== 'mouse') return;
+        setIsDragging(true);
+        setDragDistance(0);
+        if (scrollRef.current) {
+            setStartX(e.pageX - scrollRef.current.offsetLeft);
+            setScrollLeft(scrollRef.current.scrollLeft);
+            (e.target as Element).setPointerCapture(e.pointerId);
+        }
+    };
+
+    const handlePointerUp = (e: React.PointerEvent) => {
+        if (isDragging && scrollRef.current) {
+            (e.target as Element).releasePointerCapture(e.pointerId);
+        }
+        setIsDragging(false);
+    };
+
+    const handlePointerMove = (e: React.PointerEvent) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        if (scrollRef.current) {
+            const x = e.pageX - scrollRef.current.offsetLeft;
+            const walk = (x - startX) * 1.5;
+            scrollRef.current.scrollLeft = scrollLeft - walk;
+            setDragDistance(Math.abs(walk));
+        }
+    };
+
     // Calculate Stats
     const myPosts = posts.filter(p => p.isUser && p.uid === currentUser?.uid);
     const myPostCount = myPosts.length;
@@ -1234,11 +1277,20 @@ const MyPage: React.FC = () => {
                 {followedProfessors.length === 0 ? (
                     <div className="p-8 text-center text-gray-400 text-sm">아직 팔로우한 교수님이 없습니다.</div>
                 ) : (
-                    <div className="p-4 flex gap-4 overflow-x-auto no-scrollbar">
+                    <div
+                        ref={scrollRef}
+                        className="p-4 flex gap-4 overflow-x-auto no-scrollbar cursor-grab active:cursor-grabbing select-none"
+                        onPointerDown={handlePointerDown}
+                        onPointerUp={handlePointerUp}
+                        onPointerMove={handlePointerMove}
+                    >
                         {followedProfessors.map(prof => (
                             <div
                                 key={prof.id}
-                                onClick={() => navigate(`/major/${prof.id}`)}
+                                onClick={() => {
+                                    if (dragDistance > 5) return;
+                                    navigate(`/major/${prof.id}`);
+                                }}
                                 className="flex-shrink-0 flex flex-col items-center gap-2 cursor-pointer w-16"
                             >
                                 <div className="w-14 h-16 rounded-xl overflow-hidden border border-gray-200">

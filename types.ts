@@ -47,6 +47,7 @@ export interface User {
   isAdmin?: boolean;
   points?: number; // Added points for leaderboard
   hopeMajor?: string;
+  hopeJob?: string;
   careerGoal?: string;
   schoolId?: string;
   schoolName?: string;

@@ -4,6 +4,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MessageCircle, Heart, Share2, Bookmark, Send, Trash2, CornerDownRight } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { CATEGORIES, PROFESSORS } from '../constants';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export const PostDetail: React.FC = () => {
     const { id } = useParams();
@@ -69,6 +71,23 @@ export const PostDetail: React.FC = () => {
     };
 
     const canDeletePost = isAdmin || (currentUser && post.isUser && post.uid === currentUser.uid);
+
+    const markdownComponents = {
+        h1: ({ node, ...props }: any) => <h1 className="text-lg font-black text-gray-900 mt-4 mb-2" {...props} />,
+        h2: ({ node, ...props }: any) => <h2 className="text-base font-bold text-gray-900 mt-4 mb-2 border-l-2 border-primary pl-2" {...props} />,
+        h3: ({ node, ...props }: any) => <h3 className="text-sm font-bold text-gray-800 mt-3 mb-1" {...props} />,
+        p: ({ node, ...props }: any) => <p className="mb-2 last:mb-0 break-words" {...props} />,
+        ul: ({ node, ...props }: any) => <ul className="list-disc pl-5 mb-3 space-y-1" {...props} />,
+        ol: ({ node, ...props }: any) => <ol className="list-decimal pl-5 mb-3 space-y-1" {...props} />,
+        li: ({ node, ...props }: any) => <li className="pl-1" {...props} />,
+        blockquote: ({ node, ...props }: any) => (
+            <blockquote className="border-l-3 border-gray-200 pl-3 py-1 my-3 bg-gray-50 text-gray-600 italic rounded-r-md text-sm" {...props} />
+        ),
+        strong: ({ node, ...props }: any) => <strong className="font-bold text-gray-900 bg-yellow-100/50 px-0.5" {...props} />,
+        code: ({ node, ...props }: any) => (
+            <code className="bg-gray-100 text-pink-600 rounded px-1 py-0.5 font-mono text-[11px] font-bold break-all" {...props} />
+        ),
+    };
 
     return (
         <div className="bg-white min-h-screen relative pb-20 max-w-4xl mx-auto md:shadow-xl md:mt-2 md:mb-6 md:rounded-2xl md:min-h-[600px]">
@@ -207,9 +226,11 @@ export const PostDetail: React.FC = () => {
                                             )}
                                         </div>
                                     </div>
-                                    <p className="text-base text-gray-700 leading-relaxed font-medium">
-                                        {comment.text}
-                                    </p>
+                                    <div className="text-base text-gray-700 leading-relaxed font-medium">
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                                            {comment.text}
+                                        </ReactMarkdown>
+                                    </div>
                                     <div className="mt-2 flex items-center gap-3">
                                         <span className="text-[10px] text-gray-400 font-medium">{comment.createdAt}</span>
                                         <button
@@ -279,7 +300,11 @@ export const PostDetail: React.FC = () => {
                                                             )}
                                                         </div>
                                                     </div>
-                                                    <p className="text-sm text-gray-700">{reply.text}</p>
+                                                    <div className="text-sm text-gray-700 leading-relaxed max-w-none">
+                                                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                                                            {reply.text}
+                                                        </ReactMarkdown>
+                                                    </div>
                                                     <div className="mt-1 text-[10px] text-gray-400">{reply.createdAt}</div>
                                                 </div>
                                             );
