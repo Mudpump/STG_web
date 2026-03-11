@@ -5,6 +5,7 @@ import { ArrowLeft, Check, Compass, Link as LinkIcon, Lightbulb, RefreshCcw, Ale
 import { CATEGORIES, PROFESSORS } from '../constants';
 import { CategoryId, GradeType } from '../types';
 import { useStore } from '../context/StoreContext';
+import { getChaptersForSemester } from '../utils/curriculumData';
 
 type CounselingType = 'ROADMAP' | 'CONNECTION' | 'SOLUTION';
 
@@ -60,12 +61,16 @@ export const WritePostPage: React.FC = () => {
         ambition: '',
         additionalInfo: '',
         // Connection
+        prevGrade: 'H1',
+        prevSemester: '1',
         prevSubject: '',
         prevTopic: '',
-        limitation: '',
-        nextSubject: '',
-        // Solution
+        prevRecord: '',
+        targetGrade: 'H2',
+        targetSemester: '1',
         targetSubject: '',
+        targetConcern: '',
+        // Solution
         topicIdea: '',
         blocker: '',
         request: ''
@@ -102,7 +107,7 @@ export const WritePostPage: React.FC = () => {
     // --- Counseling Logic ---
     // Helper to check availability based on grade
     const isRoadmapAvailable = ['H1', 'H2', 'MIDDLE', 'ALL'].includes(targetGrade);
-    const isConnectionAvailable = ['H2', 'H3', 'ALL'].includes(targetGrade);
+    const isConnectionAvailable = ['H1', 'H2', 'H3', 'ALL'].includes(targetGrade);
 
     const handleCounselingTypeSelect = (cType: CounselingType) => {
         // Validate Grade Restriction
@@ -111,7 +116,7 @@ export const WritePostPage: React.FC = () => {
             return;
         }
         if (cType === 'CONNECTION' && !isConnectionAvailable) {
-            alert("생기부 연계형은 기존 활동이 있는 고2, 고3 학생에게 적합합니다.");
+            alert("세특 꼬꼬무 유형은 고등학생에게 적합합니다.");
             return;
         }
 
@@ -120,7 +125,7 @@ export const WritePostPage: React.FC = () => {
 
         // Auto-fill Title Template
         if (!title) {
-            const typeName = cType === 'ROADMAP' ? '로드맵 설계' : cType === 'CONNECTION' ? '생기부 연계' : '주제 솔루션';
+            const typeName = cType === 'ROADMAP' ? '로드맵 설계' : cType === 'CONNECTION' ? '세특 꼬꼬무' : '주제 솔루션';
             setTitle(`[${typeName}] 교수님, 질문 있습니다!`);
         }
     };
@@ -136,21 +141,26 @@ export const WritePostPage: React.FC = () => {
                 `3. 진로 목표: ${cForm.ambition}\n` +
                 `4. 추가 전달사항: ${cForm.additionalInfo}`;
         } else if (counselingType === 'CONNECTION') {
-            builtContent = `[상담 유형: 🔗 생기부 연계/심화형]\n\n` +
-                `1. 현재 학년: ${cForm.currentGrade}\n` +
-                `2. 희망 학과: ${cForm.major}\n` +
-                `3. 이전 활동 요약:\n` +
+            const hints = getChaptersForSemester(cForm.targetGrade, cForm.targetSemester, cForm.targetSubject);
+
+            builtContent = `[상담 유형: 🔗 세특 꼬꼬무]\n\n` +
+                `1. 이전 활동 정보:\n` +
+                `  - 시기: ${cForm.prevGrade === 'H1' ? '고1' : cForm.prevGrade === 'H2' ? '고2' : '고3'} ${cForm.prevSemester}학기\n` +
                 `  - 과목: ${cForm.prevSubject}\n` +
                 `  - 주제: ${cForm.prevTopic}\n` +
-                `  - 아쉬웠던 점(한계): ${cForm.limitation}\n` +
-                `4. 연결하고 싶은 과목: ${cForm.nextSubject}\n` +
-                `5. 추가 정보: ${cForm.additionalInfo}`;
+                `  - 세특 원문:\n${cForm.prevRecord}\n\n` +
+                `2. 이번 타겟 활동 (목표):\n` +
+                `  - 시기: ${cForm.targetGrade === 'H1' ? '고1' : cForm.targetGrade === 'H2' ? '고2' : '고3'} ${cForm.targetSemester}학기\n` +
+                `  - 타겟 과목: ${cForm.targetSubject}\n` +
+                `  - 타겟 단원명 힌트: ${hints.length > 0 ? hints.join(', ') : '없음'}\n` +
+                `  - 추가 전달사항: ${cForm.targetConcern || '없음'}\n`;
         } else if (counselingType === 'SOLUTION') {
             builtContent = `[상담 유형: 💡 주제 팩트체크/솔루션형]\n\n` +
-                `1. 탐구 과목: ${cForm.targetSubject}\n` +
-                `2. 생각해둔 주제: ${cForm.topicIdea}\n` +
-                `3. 현재 막히는 부분: ${cForm.blocker}\n` +
-                `4. 요청사항: ${cForm.request}`;
+                `1. 현재 학년: ${cForm.currentGrade}\n` +
+                `2. 탐구 과목: ${cForm.targetSubject}\n` +
+                `3. 생각해둔 주제: ${cForm.topicIdea}\n` +
+                `4. 현재 막히는 부분: ${cForm.blocker}\n` +
+                `5. 요청사항: ${cForm.request}`;
         }
         return builtContent;
     };
@@ -163,10 +173,10 @@ export const WritePostPage: React.FC = () => {
             return cForm.currentGrade && cForm.major && cForm.ambition;
         }
         if (counselingType === 'CONNECTION') {
-            return cForm.prevSubject && cForm.prevTopic && cForm.limitation && cForm.nextSubject;
+            return cForm.prevSubject && cForm.prevTopic && cForm.prevRecord && cForm.targetSubject;
         }
         if (counselingType === 'SOLUTION') {
-            return cForm.targetSubject && cForm.topicIdea && cForm.blocker;
+            return cForm.currentGrade && cForm.targetSubject && cForm.topicIdea && cForm.blocker;
         }
         return false;
     };
@@ -212,7 +222,7 @@ export const WritePostPage: React.FC = () => {
                 title,
                 content: finalContent,
                 previewText: finalContent.substring(0, 50) + '...',
-                authorAgent: '나 (학생)',
+                authorAgent: currentUser?.displayName || '익명 학생',
                 tags: type === 'COUNSELING' ? ['Q&A', '상담', counselingType || '일반'] : ['질문', '세특'],
                 targetGrade: targetGrade, // Pass the selected grade
                 targetProfessorId: type === 'COUNSELING' ? profId : undefined // Pass Prof ID if Counseling
@@ -239,7 +249,16 @@ export const WritePostPage: React.FC = () => {
         <div className="bg-white min-h-screen md:max-w-4xl md:mx-auto md:my-8 md:rounded-2xl md:shadow-xl md:min-h-[600px] overflow-hidden text-gray-900">
             <div className="sticky top-0 z-50 bg-white border-b border-gray-100 h-14 flex items-center justify-between px-4">
                 <div className="flex items-center">
-                    <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-colors">
+                    <button
+                        onClick={() => {
+                            if (type === 'COUNSELING' && profId) {
+                                navigate(`/major/${profId}?tab=COUNSELING`);
+                            } else {
+                                navigate(-1);
+                            }
+                        }}
+                        className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-colors"
+                    >
                         <ArrowLeft size={24} className="text-gray-800" />
                     </button>
                     <span className="ml-2 font-bold text-lg text-gray-900">{getTitle()}</span>
@@ -263,25 +282,6 @@ export const WritePostPage: React.FC = () => {
                                 <div className="text-center mb-4">
                                     <h2 className="text-xl font-bold text-gray-900 mb-2">어떤 고민이 있으신가요?</h2>
                                     <p className="text-sm text-gray-500 mb-4">학년에 따라 신청 가능한 상담이 달라집니다.</p>
-
-                                    {/* Grade Selector for Counseling */}
-                                    <div className="flex justify-center flex-wrap gap-2 mb-2">
-                                        {gradeOptions.filter(g => g.value !== 'ALL').map((opt) => (
-                                            <button
-                                                key={opt.value}
-                                                onClick={() => {
-                                                    setTargetGrade(opt.value);
-                                                    setCForm(prev => ({ ...prev, currentGrade: opt.label }));
-                                                }}
-                                                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${targetGrade === opt.value
-                                                    ? 'bg-gray-900 text-white border-gray-900'
-                                                    : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'
-                                                    }`}
-                                            >
-                                                {opt.label}
-                                            </button>
-                                        ))}
-                                    </div>
                                 </div>
 
                                 {/* 1. ROADMAP (Restricted: H1, H2, MIDDLE) */}
@@ -308,7 +308,7 @@ export const WritePostPage: React.FC = () => {
                                     </div>
                                 </button>
 
-                                {/* 2. CONNECTION (Restricted: H2, H3) */}
+                                {/* 2. CONNECTION (Restricted: H1, H2, H3) */}
                                 <button
                                     onClick={() => handleCounselingTypeSelect('CONNECTION')}
                                     disabled={!isConnectionAvailable}
@@ -323,11 +323,11 @@ export const WritePostPage: React.FC = () => {
                                     <div className="flex-1">
                                         <div className="flex items-center justify-between mb-1">
                                             <h3 className={`font-bold text-lg ${isConnectionAvailable ? 'text-gray-900 group-hover:text-primary' : 'text-gray-400'}`}>
-                                                🔗 생기부 연계/심화형
+                                                🔗 세특 꼬꼬무
                                             </h3>
-                                            {!isConnectionAvailable && <span className="text-[10px] font-bold text-gray-400 bg-white border border-gray-200 px-2 py-0.5 rounded">고2/3 전용</span>}
+                                            {!isConnectionAvailable && <span className="text-[10px] font-bold text-gray-400 bg-white border border-gray-200 px-2 py-0.5 rounded">고등 전용</span>}
                                         </div>
-                                        <p className="text-xs text-gray-500 mb-2 font-medium">1학년 때 아쉬웠던 활동이 있나요? 2~3학년 심화 탐구로 연결해드립니다.</p>
+                                        <p className="text-xs text-gray-500 mb-2 font-medium">이전 목표나 아쉬웠던 활동이 있나요? 꼬리에 꼬리를 무는 심화 탐구로 연결해드립니다.</p>
                                         <span className="text-[10px] bg-white border border-gray-200 px-2 py-1 rounded-md text-gray-400">#스토리텔링 #심화탐구</span>
                                     </div>
                                 </button>
@@ -356,7 +356,7 @@ export const WritePostPage: React.FC = () => {
                                         counselingType === 'CONNECTION' ? 'text-rose-600 bg-rose-50 border-rose-200' :
                                             'text-amber-600 bg-amber-50 border-amber-200'
                                         }`}>
-                                        {counselingType === 'ROADMAP' ? '🚀 로드맵 설계형' : counselingType === 'CONNECTION' ? '🔗 생기부 연계형' : '💡 솔루션형'}
+                                        {counselingType === 'ROADMAP' ? '🚀 로드맵 설계형' : counselingType === 'CONNECTION' ? '🔗 세특 꼬꼬무' : '💡 솔루션형'}
                                     </span>
                                     <button
                                         onClick={() => setCounselingStep('SELECT_TYPE')}
@@ -380,12 +380,16 @@ export const WritePostPage: React.FC = () => {
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-xs font-bold text-gray-600 mb-1">현재 학년</label>
-                                                <input
+                                                <select
                                                     value={cForm.currentGrade}
                                                     onChange={e => setCForm({ ...cForm, currentGrade: e.target.value })}
-                                                    placeholder="예: 고1"
-                                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
-                                                />
+                                                    className="w-full h-[42px] bg-white border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-primary"
+                                                >
+                                                    <option value="" disabled>학년 선택</option>
+                                                    <option value="고1">고1</option>
+                                                    <option value="고2">고2</option>
+                                                    <option value="고3">고3</option>
+                                                </select>
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-bold text-gray-600 mb-1">희망 학과</label>
@@ -393,7 +397,7 @@ export const WritePostPage: React.FC = () => {
                                                     value={cForm.major}
                                                     onChange={e => setCForm({ ...cForm, major: e.target.value })}
                                                     placeholder="예: 기계공학과"
-                                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
+                                                    className="w-full h-[42px] bg-gray-50 border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-primary"
                                                 />
                                             </div>
                                         </div>
@@ -419,76 +423,125 @@ export const WritePostPage: React.FC = () => {
                                 )}
 
                                 {counselingType === 'CONNECTION' && (
-                                    <div className="space-y-4">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-xs font-bold text-gray-600 mb-1">현재 학년</label>
-                                                <input
-                                                    value={cForm.currentGrade}
-                                                    onChange={e => setCForm({ ...cForm, currentGrade: e.target.value })}
-                                                    placeholder="예: 고2"
-                                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-bold text-gray-600 mb-1">희망 학과</label>
-                                                <input
-                                                    value={cForm.major}
-                                                    onChange={e => setCForm({ ...cForm, major: e.target.value })}
-                                                    placeholder="예: 미디어커뮤니케이션"
-                                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
-                                                />
-                                            </div>
-                                        </div>
+                                    <div className="space-y-6">
+                                        {/* 이전 활동 정보 */}
                                         <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                                            <p className="text-xs font-bold text-gray-500 mb-3 border-b border-gray-200 pb-2">이전 활동 정보 (필수)</p>
-                                            <div className="space-y-3">
-                                                <div>
-                                                    <label className="block text-[10px] font-bold text-gray-400 mb-1">과목</label>
-                                                    <input
-                                                        value={cForm.prevSubject}
-                                                        onChange={e => setCForm({ ...cForm, prevSubject: e.target.value })}
-                                                        placeholder="예: 통합사회"
-                                                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
-                                                    />
+                                            <p className="text-sm font-bold text-gray-800 mb-3 border-b border-gray-200 pb-2 flex items-center gap-1">⏪ 나의 이전 활동 정보 <span className="text-[10px] font-normal text-gray-500">(생기부 베이스캠프)</span></p>
+                                            <div className="space-y-4">
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-600 mb-1">활동 시기</label>
+                                                        <div className="flex gap-2">
+                                                            <select
+                                                                value={cForm.prevGrade}
+                                                                onChange={e => setCForm({ ...cForm, prevGrade: e.target.value })}
+                                                                className="w-1/2 h-[42px] bg-white border border-gray-200 rounded-lg px-2 text-sm outline-none focus:border-primary"
+                                                            >
+                                                                <option value="H1">1학년</option>
+                                                                <option value="H2">2학년</option>
+                                                                <option value="H3">3학년</option>
+                                                            </select>
+                                                            <select
+                                                                value={cForm.prevSemester}
+                                                                onChange={e => setCForm({ ...cForm, prevSemester: e.target.value })}
+                                                                className="w-1/2 h-[42px] bg-white border border-gray-200 rounded-lg px-2 text-sm outline-none focus:border-primary"
+                                                            >
+                                                                <option value="1">1학기</option>
+                                                                <option value="2">2학기</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-600 mb-1">과목명</label>
+                                                        <input
+                                                            value={cForm.prevSubject}
+                                                            onChange={e => setCForm({ ...cForm, prevSubject: e.target.value })}
+                                                            placeholder="예: 통합과학1"
+                                                            className="w-full h-[42px] bg-white border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-primary"
+                                                        />
+                                                    </div>
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[10px] font-bold text-gray-400 mb-1">주제</label>
+                                                    <label className="block text-xs font-bold text-gray-600 mb-1">이전 탐구 주제</label>
                                                     <input
                                                         value={cForm.prevTopic}
                                                         onChange={e => setCForm({ ...cForm, prevTopic: e.target.value })}
-                                                        placeholder="예: 가짜 뉴스의 확산 원리"
+                                                        placeholder="예: 자율주행 자동차 라이다 센서의 한계점"
                                                         className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-[10px] font-bold text-rose-500 mb-1">아쉬웠던 점 (한계)</label>
+                                                    <label className="block text-xs font-bold text-rose-500 mb-1">세특 원문 <span className="text-[10px] text-gray-500 font-normal">(중요! 생기부 복붙)</span></label>
                                                     <textarea
-                                                        value={cForm.limitation}
-                                                        onChange={e => setCForm({ ...cForm, limitation: e.target.value })}
-                                                        placeholder="핵심! 예: 현상은 알겠는데 확산 알고리즘 원리는 몰라서 아쉬웠음"
-                                                        className="w-full h-20 bg-white border border-rose-200 rounded-lg p-3 text-sm outline-none focus:border-rose-500 resize-none placeholder:text-gray-400"
+                                                        value={cForm.prevRecord}
+                                                        onChange={e => setCForm({ ...cForm, prevRecord: e.target.value })}
+                                                        placeholder="생기부에 적힌 해당 과목의 세특 내용을 복사해서 그대로 붙여넣어 주세요."
+                                                        className="w-full h-28 bg-white border border-rose-200 rounded-lg p-3 text-sm outline-none focus:border-rose-500 resize-none placeholder:text-gray-400"
                                                     />
                                                 </div>
                                             </div>
                                         </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-600 mb-1">이번에 연결하고 싶은 과목</label>
-                                            <input
-                                                value={cForm.nextSubject}
-                                                onChange={e => setCForm({ ...cForm, nextSubject: e.target.value })}
-                                                placeholder="예: 확률과 통계"
-                                                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-600 mb-1">추가 정보</label>
-                                            <input
-                                                value={cForm.additionalInfo}
-                                                onChange={e => setCForm({ ...cForm, additionalInfo: e.target.value })}
-                                                placeholder="예: 아쉬웠던 점을 확통 세특으로 연결하고 싶어요"
-                                                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
-                                            />
+
+                                        {/* 타겟 활동 정보 */}
+                                        <div className="bg-rose-50/50 p-4 rounded-xl border border-rose-100">
+                                            <p className="text-sm font-bold text-gray-800 mb-3 border-b border-rose-200/50 pb-2 flex items-center gap-1">⏩ 이번에 추천받고 싶은 타겟 활동 <span className="text-[10px] font-normal text-gray-500">(목표)</span></p>
+                                            <div className="space-y-4">
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-600 mb-1">타겟 시기</label>
+                                                        <div className="flex gap-2">
+                                                            <select
+                                                                value={cForm.targetGrade}
+                                                                onChange={e => setCForm({ ...cForm, targetGrade: e.target.value })}
+                                                                className="w-1/2 h-[42px] bg-white border border-gray-200 rounded-lg px-2 text-sm outline-none focus:border-primary"
+                                                            >
+                                                                <option value="H1">1학년</option>
+                                                                <option value="H2">2학년</option>
+                                                                <option value="H3">3학년</option>
+                                                            </select>
+                                                            <select
+                                                                value={cForm.targetSemester}
+                                                                onChange={e => setCForm({ ...cForm, targetSemester: e.target.value })}
+                                                                className="w-1/2 h-[42px] bg-white border border-gray-200 rounded-lg px-2 text-sm outline-none focus:border-primary"
+                                                            >
+                                                                <option value="1">1학기</option>
+                                                                <option value="2">2학기</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-bold text-gray-600 mb-1">타겟 과목명</label>
+                                                        <input
+                                                            value={cForm.targetSubject}
+                                                            onChange={e => setCForm({ ...cForm, targetSubject: e.target.value })}
+                                                            placeholder="예: 물리학"
+                                                            className="w-full h-[42px] bg-white border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-primary"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* 단원 힌트 (커리큘럼 연동) */}
+                                                {cForm.targetSubject && getChaptersForSemester(cForm.targetGrade, cForm.targetSemester, cForm.targetSubject).length > 0 && (
+                                                    <div className="bg-white px-3 py-2 rounded-lg border border-indigo-100">
+                                                        <p className="text-[10px] font-bold text-indigo-600 mb-1">📘 이번 {cForm.targetSemester}학기 {cForm.targetSubject} 수업에서는 이런 내용을 배워요!</p>
+                                                        <div className="flex flex-wrap gap-1 mt-1">
+                                                            {getChaptersForSemester(cForm.targetGrade, cForm.targetSemester, cForm.targetSubject).map(ch => (
+                                                                <span key={ch} className="text-[10px] px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full">#{ch}</span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                <div>
+                                                    <label className="block text-xs font-bold text-gray-600 mb-1">추가 전달사항 <span className="font-normal text-gray-400">(선택)</span></label>
+                                                    <textarea
+                                                        value={cForm.targetConcern}
+                                                        onChange={e => setCForm({ ...cForm, targetConcern: e.target.value })}
+                                                        placeholder="예: 물리 원리와 제 진로(컴공)를 엮어서 탐구보고서를 써야 합니다."
+                                                        className="w-full h-16 bg-white border border-gray-200 rounded-lg p-3 text-sm outline-none focus:border-primary resize-none placeholder:text-gray-400"
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -497,12 +550,25 @@ export const WritePostPage: React.FC = () => {
                                     <div className="space-y-4">
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
+                                                <label className="block text-xs font-bold text-gray-600 mb-1">현재 학년</label>
+                                                <select
+                                                    value={cForm.currentGrade}
+                                                    onChange={e => setCForm({ ...cForm, currentGrade: e.target.value })}
+                                                    className="w-full h-[42px] bg-white border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-primary"
+                                                >
+                                                    <option value="" disabled>학년 선택</option>
+                                                    <option value="고1">고1</option>
+                                                    <option value="고2">고2</option>
+                                                    <option value="고3">고3</option>
+                                                </select>
+                                            </div>
+                                            <div>
                                                 <label className="block text-xs font-bold text-gray-600 mb-1">탐구 과목</label>
                                                 <input
                                                     value={cForm.targetSubject}
                                                     onChange={e => setCForm({ ...cForm, targetSubject: e.target.value })}
                                                     placeholder="예: 화학1"
-                                                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
+                                                    className="w-full h-[42px] bg-gray-50 border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-primary"
                                                 />
                                             </div>
                                         </div>

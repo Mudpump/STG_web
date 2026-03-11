@@ -134,7 +134,7 @@ export const PostDetail: React.FC = () => {
                     </div>
                     <div>
                         <div className="text-sm md:text-base font-bold text-gray-900">
-                            {post.isUser ? '나 (학생)' : post.authorAgent}
+                            {post.authorAgent}
                         </div>
                         <div className="text-xs text-gray-400 font-medium">{post.createdAt} · 조회 {post.viewCount}</div>
                     </div>

@@ -8,7 +8,7 @@ import { GRADE_SUBJECTS } from '../utils/curriculumData';
 // 상담 유형 감지 헬퍼
 function detectCounselingType(content: string): 'ROADMAP' | 'CONNECTION' | 'SOLUTION' | 'GENERAL' {
     if (content.includes('로드맵 설계형')) return 'ROADMAP';
-    if (content.includes('생기부 연계/심화형')) return 'CONNECTION';
+    if (content.includes('세특 꼬꼬무')) return 'CONNECTION';
     if (content.includes('주제 팩트체크/솔루션형')) return 'SOLUTION';
     return 'GENERAL';
 }
@@ -168,10 +168,25 @@ export async function runCounselingAgent(
         `;
     } else if (counselingType === 'CONNECTION') {
         specificInstruction = `
-        [Type: 🔗 Record Connection]
-        1. **Narrative Link**: Explain how the previous activity connects to the new goal.
-        2. **Detailed Topic**: Provide a specific, deep exploration topic for the 'Next Subject'.
-        3. **Tone**: Logical, cohesive, and deepening.
+        [Type: 🔗 Record Connection (세특 꼬꼬무)]
+        
+        **Goal**: Design deep exploration topics that seamlessly connect the student's previous activity (based on their raw student record) to their new Target Subject.
+        
+        **Core Strategy**: 
+        1. **Fact & Competency Extraction**: Analyze the '세특 원문' (Previous Activity Record) to identify the specific actions the student took and the exact competencies they demonstrated (e.g., problem-solving, data analysis).
+        2. **Cross-over Mapping**: Find the logical intersection between their previous competencies and the '타겟 과목' (Target Subject). 
+           - **CRITICAL**: Check the '타겟 단원명 힌트' (Target Chapter Hints). If chapters are listed, your proposed topics MUST strictly align with at least one of these chapters. Do not hallucinate curriculum content. If it says '없음', rely on the general nature of the Target Subject.
+        3. **Actionable Theme Generation**: Propose exactly 3 highly specific exploration topics: [심화형(Deepening)], [융합형(Crossover)], and [적용형(Action-oriented)].
+
+        [Formatting Rules]
+        - **Tone**: Logical, cohesive, deepening, and expert mentorship.
+        - **Headers**: Use markdown headers for structure.
+        - **Content Output Requirements**:
+            - **1. 이전 역량 분석**: Briefly summarize the core competency found in the raw student record.
+            - **2. 연계 탐구솔루션 제안**:
+                - **[제안 1 - 심화형]**: Topic name and specific step-by-step activity guide. (Must explicitly link to the target chapters if provided).
+                - **[제안 2 - 융합형]**: Topic name and specific step-by-step activity guide. (Must explicitly link to the target chapters if provided).
+                - **[제안 3 - 적용 및 실천형]**: Topic name and specific step-by-step activity guide. (Must explicitly link to the target chapters if provided).
         `;
     } else if (counselingType === 'SOLUTION') {
         specificInstruction = `

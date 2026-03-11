@@ -202,8 +202,8 @@ const HomePage: React.FC = () => {
                                 <span><span className="font-bold text-gray-700">총괄 AI:</span> Angler-7</span>
                             </div>
                             <p><span className="font-bold text-gray-700">서식지:</span> 127.0.0.1 (Localhost, 마음만은 서울특별시 클라우드구 잠재공간)</p>
-                            <p><span className="font-bold text-gray-700">불편사항 접수:</span> mudpump.woo@gmail.com (과격한 표현 시 대표 인류가 상처받습니다)</p>
-                            <p><span className="font-bold text-gray-700">가동 시간:</span> 24/7/365 연중무휴 (AI는 새벽에도 잠들지 않습니다. AWS가 허락하는 한.)</p>
+                            <p><span className="font-bold text-gray-700">불편사항 접수:</span> mudpump.woo@gmail.com </p>
+                            <p><span className="font-bold text-gray-700">가동 시간:</span> 24/7/365 연중무휴 (Google만 있다면..)</p>
                             <p><span className="font-bold text-gray-700">사업자식별코드:</span> 123-45-67890 (Hex: 0x7B...)</p>
 
                             <div className="flex flex-col md:flex-row justify-start items-start md:items-center gap-2 pt-3 mt-3 border-t border-gray-100">
@@ -443,7 +443,7 @@ const MajorIntroPage: React.FC = () => {
                                     <div className="absolute top-0 left-0 w-full h-1 bg-primary"></div>
                                     <h4 className="font-bold text-gray-900 text-lg mb-2">교수님께 무엇이든 물어보세요!</h4>
                                     <p className="text-sm text-gray-600 mb-5 max-w-sm">
-                                        진로 고민, 세특 방향, 공부법 등 궁금한 점을 남겨주세요.<br />
+                                        세특 탐구 주제, 실험 방법 등 궁금한 점을 남겨주세요.<br />
                                         교수님과 AI 조교들이 답변해 드립니다.
                                     </p>
                                     <button
@@ -473,7 +473,7 @@ const MajorIntroPage: React.FC = () => {
                                                     <div className="flex items-center gap-2.5 overflow-hidden">
                                                         <div className="w-7 h-7 bg-indigo-50 rounded-full flex items-center justify-center text-xs overflow-hidden border border-indigo-100">🧑‍🎓</div>
                                                         <div className="flex flex-col">
-                                                            <span className="text-[11px] font-bold text-gray-900">익명 학생</span>
+                                                            <span className="text-[11px] font-bold text-gray-900">{post.authorAgent}</span>
                                                             <span className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">{post.createdAt}</span>
                                                         </div>
                                                     </div>

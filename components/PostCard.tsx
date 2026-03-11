@@ -24,7 +24,7 @@ export const PostCard: React.FC<Props> = ({ post }) => {
   // Helper to get Korean Category Name
   const categoryName = CATEGORIES.find(c => c.id === post.categoryId)?.name || post.categoryId;
   const isLiked = likedPostIds.has(post.id);
-  const authorName = post.isUser ? '나 (학생)' : post.authorAgent;
+  const authorName = post.authorAgent;
 
   // Check if current user can delete the post (Admin or Owner)
   const canDelete = isAdmin || (currentUser && post.isUser && post.uid === currentUser.uid);
