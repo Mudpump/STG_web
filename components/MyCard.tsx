@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
 import { supabase } from '../utils/supabase';
-import { Edit2, Save, X, User as UserIcon, Target, BookOpen, School, Search } from 'lucide-react';
+import { Edit2, Save, X, User as UserIcon, Target, BookOpen, School, Search, Image as ImageIcon } from 'lucide-react';
 import { GradeType } from '../types';
 import { SchoolSearchModal } from './SchoolSearchModal';
 
@@ -10,6 +10,7 @@ export const MyCard: React.FC = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+    const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
 
     // Form State
     const [nickname, setNickname] = useState('');
@@ -19,6 +20,7 @@ export const MyCard: React.FC = () => {
     const [careerGoal, setCareerGoal] = useState('');
     const [schoolName, setSchoolName] = useState('');
     const [schoolId, setSchoolId] = useState('');
+    const [avatarId, setAvatarId] = useState<string>('');
 
     // Pre-fill form when entering edit mode
     const handleEditClick = () => {
@@ -30,6 +32,7 @@ export const MyCard: React.FC = () => {
         setCareerGoal(currentUser.careerGoal || '');
         setSchoolName(currentUser.schoolName || '');
         setSchoolId(currentUser.schoolId || '');
+        setAvatarId(currentUser.avatarId || '');
         setIsEditing(true);
     };
 
@@ -70,6 +73,7 @@ export const MyCard: React.FC = () => {
                     hope_job: hopeJob,
                     career_goal: careerGoal,
                     school_id: schoolId || null,
+                    avatar_id: avatarId || null,
                     updated_at: new Date().toISOString()
                 });
 
@@ -93,7 +97,8 @@ export const MyCard: React.FC = () => {
                 hopeJob,
                 careerGoal,
                 schoolId,
-                schoolName
+                schoolName,
+                avatarId
             });
 
             setIsEditing(false);
@@ -103,6 +108,20 @@ export const MyCard: React.FC = () => {
             alert('저장에 실패했습니다.');
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleDirectAvatarSave = async (newAvatarId: string) => {
+        if (!currentUser) return;
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ avatar_id: newAvatarId || null, updated_at: new Date().toISOString() })
+                .eq('id', currentUser.uid);
+            
+            if (error) throw error;
+        } catch (e) {
+            console.error("Avatar save failed:", e);
         }
     };
 
@@ -269,17 +288,62 @@ export const MyCard: React.FC = () => {
                 <Edit2 size={16} className="group-hover/btn:-rotate-12 transition-transform" />
             </button>
 
+            {/* Avatar Selection Modal */}
+            {isAvatarModalOpen && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl p-6 w-full max-w-sm max-h-[80vh] flex flex-col relative animation-fade-in shadow-xl border-4 border-gray-900">
+                        <button onClick={() => setIsAvatarModalOpen(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-900 p-1">
+                            <X size={24} />
+                        </button>
+                        <h3 className="font-black text-xl text-gray-900 mb-6 text-center">아바타 선택 <span className="text-2xl">📸</span></h3>
+                        
+                        <div className="grid grid-cols-3 gap-4 overflow-y-auto pr-1 pb-4">
+                            {/* Default Icon Option */}
+                            <div 
+                                onClick={() => { setAvatarId(''); updateUserProfile({ ...currentUser, avatarId: '' }); setIsAvatarModalOpen(false); handleDirectAvatarSave(''); }}
+                                className={`aspect-square rounded-2xl border-4 cursor-pointer transition-all flex items-center justify-center bg-gray-50 hover:bg-gray-100 ${!currentUser.avatarId ? 'border-primary shadow-[4px_4px_0px_#4F46E5] -translate-y-1' : 'border-gray-200 hover:border-gray-300'}`}
+                            >
+                                <UserIcon size={32} className="text-gray-400" />
+                            </div>
+                            
+                            {/* Avatar List 1~7 */}
+                            {[1, 2, 3, 4, 5, 6, 7].map(num => {
+                                const id = `avatar_photo_${num}`;
+                                const isSelected = currentUser.avatarId === id;
+                                return (
+                                    <div 
+                                        key={id}
+                                        onClick={() => { setAvatarId(id); updateUserProfile({ ...currentUser, avatarId: id }); setIsAvatarModalOpen(false); handleDirectAvatarSave(id); }}
+                                        className={`aspect-square rounded-2xl border-4 overflow-hidden cursor-pointer transition-all ${isSelected ? 'border-primary shadow-[4px_4px_0px_#4F46E5] -translate-y-1' : 'border-gray-200 hover:border-gray-300 hover:-translate-y-1'}`}
+                                    >
+                                        <img src={`/avatar/${id}.jpg`} alt={`Avatar ${num}`} className="w-full h-full object-cover" />
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <div className="mt-4 text-center text-xs font-bold text-gray-500">
+                            마음에 드는 프로필을 선택해 주세요!
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="relative z-10">
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 mb-8 text-center sm:text-left">
                     {/* Bubbly Profile Image */}
-                    <div className="w-24 h-24 bg-pink-100 rounded-[24px] rotate-[-3deg] border-4 border-gray-900 shadow-[4px_4px_0px_#F472B6] overflow-hidden flex-shrink-0 relative">
-                        {currentUser.photoURL ? (
-                            <img src={currentUser.photoURL} alt="Profile" className="w-full h-full object-cover" />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center text-pink-400">
-                                <UserIcon size={40} />
-                            </div>
-                        )}
+                    <div className="relative group/avatar cursor-pointer" onClick={() => setIsAvatarModalOpen(true)}>
+                        <div className="w-24 h-24 bg-pink-100 rounded-[24px] rotate-[-3deg] border-4 border-gray-900 shadow-[4px_4px_0px_#F472B6] overflow-hidden flex-shrink-0 relative group-hover/avatar:rotate-0 transition-transform bg-white">
+                            {currentUser.avatarId ? (
+                                <img src={`/avatar/${currentUser.avatarId}.jpg`} alt="Avatar" className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-gray-50">
+                                    <UserIcon size={40} className="text-gray-400" />
+                                </div>
+                            )}
+                        </div>
+                        <div className="absolute -bottom-2 -right-2 bg-yellow-300 border-2 border-gray-900 rounded-full p-1.5 shadow-[2px_2px_0px_#111827] text-gray-900 z-10 group-hover/avatar:scale-110 transition-transform">
+                            <ImageIcon size={14} />
+                        </div>
                     </div>
 
                     <div className="flex-1 mt-2">

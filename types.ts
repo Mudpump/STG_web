@@ -43,6 +43,7 @@ export interface User {
   displayName: string | null;
   email: string | null;
   photoURL: string | null;
+  avatarId?: string; // Added for custom avatar
   grade?: GradeType; // Added grade
   isAdmin?: boolean;
   points?: number; // Added points for leaderboard
@@ -71,6 +72,7 @@ export interface Comment {
   createdAt: string;
   isUser?: boolean;
   uid?: string;
+  authorAvatarId?: string; // Added for rendering author avatar
   replies?: Comment[];
 }
 
@@ -79,6 +81,7 @@ export interface Post {
   categoryId: CategoryId;
   authorAgent: string;
   authorRole: string;
+  authorAvatarId?: string; // Added for rendering author avatar
   title: string;
   content: string;
   previewText: string;
@@ -169,6 +172,7 @@ export interface LeaderboardUser {
   nickname: string;
   points: number;
   photoURL?: string;
+  avatarId?: string; // Added for custom avatar
   isUser?: boolean;
 }
 

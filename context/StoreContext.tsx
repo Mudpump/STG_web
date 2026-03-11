@@ -255,6 +255,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           categoryId: d.category_id,
           authorAgent: d.author_agent,
           authorRole: d.author_role,
+          authorAvatarId: d.author_avatar_id, // Added author_avatar_id
           title: d.title,
           content: d.content,
           previewText: d.preview_text,
@@ -357,7 +358,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
       let query = supabase
         .from('posts')
-        .select('id, category_id, author_agent, author_role, title, content, preview_text, view_count, like_count, created_at, tags, is_user, uid, target_grade, episode_type, target_professor_id', { count: 'exact' });
+        .select('id, category_id, author_agent, author_role, author_avatar_id, title, content, preview_text, view_count, like_count, created_at, tags, is_user, uid, target_grade, episode_type, target_professor_id', { count: 'exact' });
 
       // MY_PROFS: 팔로우 교수의 글만
       if (params.categoryId === 'MY_PROFS') {
@@ -959,6 +960,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           displayName: session.user.user_metadata.full_name || session.user.user_metadata.name || session.user.email?.split('@')[0] || '학생',
           email: session.user.email || null,
           photoURL: session.user.user_metadata.avatar_url || null,
+          avatarId: session.user.user_metadata.avatar_id || null, // Add avatar_id from metadata if exists
           grade: session.user.user_metadata.grade || 'ALL',
           points: session.user.user_metadata.points || 0
         };
@@ -994,7 +996,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 hopeJob: profile.hope_job || undefined,
                 careerGoal: profile.career_goal || undefined,
                 schoolId: profile.school_id || undefined,
-                schoolName: schoolNameObj?.school_name || undefined
+                schoolName: schoolNameObj?.school_name || undefined,
+                avatarId: profile.avatar_id || undefined
               } : prev);
             }
           } catch (e) {
@@ -1025,7 +1028,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             grade: profile.grade || prev.grade,
             hopeMajor: profile.hope_major || prev.hopeMajor,
             hopeJob: profile.hope_job || prev.hopeJob,
-            careerGoal: profile.career_goal || prev.careerGoal
+            careerGoal: profile.career_goal || prev.careerGoal,
+            avatarId: profile.avatar_id !== undefined ? profile.avatar_id : prev.avatarId
           } : null);
         }
         fetchLeaderboard();
@@ -1058,11 +1062,11 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (!currentUser) return;
     const tempId = `temp-${Date.now()}`;
     const optimisticPost: Post = {
-      id: tempId, categoryId: post.categoryId, authorAgent: currentUser.displayName || '나', authorRole: 'User', title: post.title, content: post.content, previewText: post.previewText, comments: [], viewCount: 0, likeCount: 0, createdAt: '방금 전', tags: post.tags, isUser: true, uid: currentUser.uid, targetGrade: post.targetGrade, targetProfessorId: post.targetProfessorId
+      id: tempId, categoryId: post.categoryId, authorAgent: currentUser.displayName || '나', authorRole: 'User', authorAvatarId: currentUser.avatarId, title: post.title, content: post.content, previewText: post.previewText, comments: [], viewCount: 0, likeCount: 0, createdAt: '방금 전', tags: post.tags, isUser: true, uid: currentUser.uid, targetGrade: post.targetGrade, targetProfessorId: post.targetProfessorId
     };
     setPosts(prev => [optimisticPost, ...prev]);
     const { data, error } = await supabase.from('posts').insert({
-      title: post.title, content: post.content, category_id: post.categoryId, author_agent: currentUser.displayName, author_role: 'User', preview_text: post.previewText, tags: post.tags, is_user: true, uid: currentUser.uid, target_grade: post.targetGrade, target_professor_id: post.targetProfessorId
+      title: post.title, content: post.content, category_id: post.categoryId, author_agent: currentUser.displayName, author_role: 'User', author_avatar_id: currentUser.avatarId || null, preview_text: post.previewText, tags: post.tags, is_user: true, uid: currentUser.uid, target_grade: post.targetGrade, target_professor_id: post.targetProfessorId
     }).select().single();
 
     if (data && !error) {

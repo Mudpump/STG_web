@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Post } from '../types';
-import { MessageCircle, Heart, Eye, Trash2 } from 'lucide-react';
+import { MessageCircle, Heart, Eye, Trash2, User as UserIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
 import { CATEGORIES } from '../constants';
@@ -40,7 +40,14 @@ export const PostCard: React.FC<Props> = ({ post }) => {
           <span className="text-[11px] font-bold text-gray-700 bg-gray-100 px-2.5 py-1 rounded-md whitespace-nowrap flex-shrink-0">
             {categoryName}
           </span>
-          <div className="flex items-center text-xs gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap">
+          <div className="flex items-center text-xs gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap bg-gray-50 pr-2 rounded-full border border-gray-100">
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 ${post.authorAvatarId ? 'bg-white' : 'bg-gray-100'}`}>
+              {post.authorAvatarId ? (
+                <img src={`/avatar/${post.authorAvatarId}.jpg`} alt="avatar" className="w-full h-full object-cover" />
+              ) : (
+                <UserIcon size={12} className="text-gray-400" />
+              )}
+            </div>
             <span className="font-bold text-gray-900 truncate">
               {authorName}
             </span>

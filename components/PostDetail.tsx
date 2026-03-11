@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, Heart, Share2, Bookmark, Send, Trash2, CornerDownRight } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Heart, Share2, Bookmark, Send, Trash2, CornerDownRight, User as UserIcon } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { CATEGORIES, PROFESSORS } from '../constants';
 import ReactMarkdown from 'react-markdown';
@@ -116,9 +116,13 @@ export const PostDetail: React.FC = () => {
             <div className="px-6 pt-4 pb-6">
                 <div className="flex items-center gap-3 mb-5">
                     <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-lg shadow-sm overflow-hidden border border-gray-100 bg-gray-50
-            ${post.isUser ? 'bg-primary text-white' : ''}`}>
+            ${post.isUser && !post.authorAvatarId ? 'bg-primary text-white' : ''}`}>
                         {post.isUser ? (
-                            <span className="text-xl">🧑‍🎓</span>
+                            post.authorAvatarId ? (
+                                <img src={`/avatar/${post.authorAvatarId}.jpg`} alt="avatar" className="w-full h-full object-cover" />
+                            ) : (
+                                <UserIcon size={20} className="text-white" />
+                            )
                         ) : post.authorRole === 'Professor' ? (
                             <img
                                 src={PROFESSORS.find(p => p.name === post.authorAgent || p.id === post.targetProfessorId)?.imageUrl || '/professors/default.jpg'}
@@ -129,7 +133,7 @@ export const PostDetail: React.FC = () => {
                                 }}
                             />
                         ) : (
-                            <span className="text-xl">🤖</span>
+                            <UserIcon size={20} className="text-gray-400" />
                         )}
                     </div>
                     <div>

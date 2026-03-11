@@ -19,7 +19,7 @@ import { AdminRoute } from './components/AdminRoute';
 import { SearchPage } from './pages/SearchPage';
 import { LoginModal } from './components/LoginModal';
 import { MyCard } from './components/MyCard';
-import { PenSquare, Search, Shield, Lock, X, User as UserIcon, Flame, Clock, Filter, ArrowLeft, GraduationCap, BookOpen, Briefcase, GraduationCap as GradIcon, CheckCircle2, UserPlus, Heart, Bookmark, ChevronRight, PenTool, ThumbsUp, MessageCircleQuestion, Bot, MessageCircle, Eye, Trash2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, UserPlus, MessageCircleQuestion, Bookmark, Heart, MessageCircle, Eye, ChevronRight, PenSquare, Search, Flame, Clock, Filter, Bot, BookOpen, PenTool, Briefcase, ThumbsUp, User as UserIcon, Trash2, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { TeacherBrainPage } from './pages/TeacherBrainPage';
 import { TeacherBrainDetail } from './pages/TeacherBrainDetail';
@@ -471,7 +471,13 @@ const MajorIntroPage: React.FC = () => {
                                             >
                                                 <div className="flex justify-between items-center mb-3">
                                                     <div className="flex items-center gap-2.5 overflow-hidden">
-                                                        <div className="w-7 h-7 bg-indigo-50 rounded-full flex items-center justify-center text-xs overflow-hidden border border-indigo-100">🧑‍🎓</div>
+                                                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs overflow-hidden border ${post.authorAvatarId ? 'border-gray-200 bg-white' : 'border-indigo-100 bg-indigo-50'}`}>
+                                                            {post.authorAvatarId ? (
+                                                                <img src={`/avatar/${post.authorAvatarId}.jpg`} alt="avatar" className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <UserIcon size={14} className="text-gray-400" />
+                                                            )}
+                                                        </div>
                                                         <div className="flex flex-col">
                                                             <span className="text-[11px] font-bold text-gray-900">{post.authorAgent}</span>
                                                             <span className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter">{post.createdAt}</span>
