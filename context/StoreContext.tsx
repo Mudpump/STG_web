@@ -11,10 +11,7 @@ import { CATEGORIES, PROFESSORS } from '../constants'; // Import CATEGORIES for 
 import { ProfessorTheme } from '../agents/professorAgents'; // Type import
 
 
-// Import Dummy Data
-import { FEED_DATA } from '../data/feedData';
-import { ARCHIVE_DATA } from '../data/archiveData';
-import { ARENA_DATA } from '../data/arenaData';
+
 
 interface StoreContextType {
   // Auth
@@ -160,10 +157,10 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   });
   const [weeklyProgress, setWeeklyProgress] = useState<DailyScore[]>([]);
 
-  // Data State - Initialize with Dummy Data immediately!
-  const [posts, setPosts] = useState<Post[]>(FEED_DATA);
-  const [trends, setTrends] = useState<TrendItem[]>(ARCHIVE_DATA);
-  const [votes, setVotes] = useState<VoteItem[]>(ARENA_DATA);
+  // Data State - Initialize empty
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [trends, setTrends] = useState<TrendItem[]>([]);
+  const [votes, setVotes] = useState<VoteItem[]>([]);
 
   // [Pagination] Feed 전용 상태
   const [feedPosts, setFeedPosts] = useState<Post[]>([]);
@@ -276,10 +273,10 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
       if (currentFetchId !== latestFetchPostsId) return;
 
-      // Merge DB posts with Dummy posts (Ensure Dummy posts are always present)
+      // Merge DB posts with temp posts
       setPosts(prev => {
         const tempPosts = prev.filter(p => String(p.id).startsWith('temp-'));
-        const newPosts = [...tempPosts, ...loadedPosts, ...FEED_DATA];
+        const newPosts = [...tempPosts, ...loadedPosts];
         const seen = new Set();
         return newPosts.filter(p => {
           if (seen.has(p.id)) return false;
@@ -451,31 +448,17 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         return updated ? newPosts : prev;
       });
 
-      // 첫 페이지: Dummy Data 병합 + 새로 세팅 / 이후 페이지: 기존에 append
+      // 첫 페이지: 새로 세팅 / 이후 페이지: 기존에 append
       if (params.page === 1) {
-        // Dummy data도 같은 필터 조건 적용
-        let dummyFiltered = FEED_DATA.filter(p => !p.targetProfessorId && p.authorRole?.toLowerCase() !== 'professor');
-        if (params.categoryId && params.categoryId !== 'ALL' && params.categoryId !== 'MY_PROFS') {
-          dummyFiltered = dummyFiltered.filter(p => p.categoryId === params.categoryId);
-        }
-        if (params.categoryId === 'MY_PROFS') {
-          dummyFiltered = []; // dummy data에는 MY_PROFS 없음
-        }
-        if (params.filterGrade && params.filterGrade !== 'ALL') {
-          dummyFiltered = dummyFiltered.filter(p => p.targetGrade === params.filterGrade || p.targetGrade === 'ALL' || !p.targetGrade);
-        }
-        if (params.sortBy === 'POPULAR') {
-          dummyFiltered.sort((a, b) => b.likeCount - a.likeCount);
-        }
-        setFeedPosts([...mappedPosts, ...dummyFiltered]);
+        setFeedPosts(mappedPosts);
       } else {
         setFeedPosts(prev => [...prev, ...mappedPosts]);
       }
 
       // hasMore 판별
-      const totalCount = (count || 0) + (params.page === 1 ? FEED_DATA.length : 0);
+      const totalCount = count || 0;
       const loadedSoFar = params.page * FEED_PAGE_SIZE;
-      setFeedHasMore(loadedSoFar < (count || 0));
+      setFeedHasMore(loadedSoFar < totalCount);
     } catch (e) {
       console.error('Feed pagination error:', e);
     } finally {
@@ -546,7 +529,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       });
 
       if (params.page === 1) {
-        setTrendListItems([...mappedTrends, ...ARCHIVE_DATA]);
+        setTrendListItems(mappedTrends);
       } else {
         setTrendListItems(prev => [...prev, ...mappedTrends]);
       }
@@ -635,11 +618,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       });
 
       if (params.page === 1) {
-        const mappedArenaData = ARENA_DATA.map(v => {
-          const historyItem = userHistory.find(h => h.vote_id === v.id);
-          return historyItem ? { ...v, myVote: historyItem.choice as 'A' | 'B' } : v;
-        });
-        setVoteListItems([...mappedVotes, ...mappedArenaData]);
+        setVoteListItems(mappedVotes);
       } else {
         setVoteListItems(prev => [...prev, ...mappedVotes]);
       }
@@ -676,7 +655,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (currentFetchId !== latestFetchTrendsId) return;
       setTrends(prev => {
         const tempTrends = prev.filter(t => String(t.id).startsWith('temp-'));
-        const newTrends = [...tempTrends, ...loadedTrends, ...ARCHIVE_DATA];
+        const newTrends = [...tempTrends, ...loadedTrends];
         const seen = new Set();
         return newTrends.filter(t => {
           if (seen.has(t.id)) return false;
@@ -715,38 +694,20 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           };
         });
 
-        const mappedArenaData = ARENA_DATA.map(v => {
-          const historyItem = userHistory.find(h => h.vote_id === v.id);
-          return historyItem ? { ...v, myVote: historyItem.choice as 'A' | 'B' } : v;
-        });
-
-        finalVotes = [...loadedVotes, ...mappedArenaData];
+        finalVotes = [...loadedVotes];
       }
 
       if (currentFetchId !== latestFetchVotesId) return;
-      if (finalVotes.length > 0) {
-        setVotes(prev => {
-          const tempVotes = prev.filter(v => String(v.id).startsWith('temp-'));
-          const newVotes = [...tempVotes, ...finalVotes];
-          const seen = new Set();
-          return newVotes.filter(v => {
-            if (seen.has(v.id)) return false;
-            seen.add(v.id);
-            return true;
-          });
+      setVotes(prev => {
+        const tempVotes = prev.filter(v => String(v.id).startsWith('temp-'));
+        const newVotes = [...tempVotes, ...finalVotes];
+        const seen = new Set();
+        return newVotes.filter(v => {
+          if (seen.has(v.id)) return false;
+          seen.add(v.id);
+          return true;
         });
-      } else {
-        setVotes(prev => {
-          const tempVotes = prev.filter(v => String(v.id).startsWith('temp-'));
-          const newVotes = [...tempVotes, ...ARENA_DATA];
-          const seen = new Set();
-          return newVotes.filter(v => {
-            if (seen.has(v.id)) return false;
-            seen.add(v.id);
-            return true;
-          });
-        });
-      }
+      });
     } catch (e) { console.error(e); }
   };
 
@@ -1133,6 +1094,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (!currentUser) return;
     const newComment: Comment = { id: Date.now().toString(), agentName: currentUser.displayName || '학생', role: 'User', text, likes: 0, createdAt: '방금 전', isUser: true, uid: currentUser.uid, replies: [] };
     setPosts(prev => prev.map(p => p.id === postId ? { ...p, comments: [...p.comments, newComment] } : p));
+    setFeedPosts(prev => prev.map(p => p.id === postId ? { ...p, commentCount: (p.commentCount || 0) + 1 } : p));
     const { error } = await supabase.from('comments').insert({ post_id: postId, agent_name: currentUser.displayName, role: 'User', text, is_user: true, uid: currentUser.uid });
     if (error) { fetchPostComments(postId); } // Refresh specific post comments
   };
@@ -1156,6 +1118,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   };
 
   const deleteComment = async (postId: string, commentId: string | number) => {
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, comments: p.comments.filter(c => c.id !== commentId) } : p));
+    setFeedPosts(prev => prev.map(p => p.id === postId ? { ...p, commentCount: Math.max(0, (p.commentCount || 0) - 1) } : p));
     const { error, data } = await supabase.from('comments').delete().eq('id', commentId).select();
     if (error || !data || data.length === 0) { fetchPostComments(postId); } // Refresh specific post comments
   };
@@ -1178,10 +1142,10 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       fetchTrends();
     }
   };
-  const deleteTrend = async (id: string) => { setTrends(prev => prev.filter(t => t.id !== id)); await supabase.from('comments').delete().eq('trend_id', id); const { error, data } = await supabase.from('trends').delete().eq('id', id).select(); if (error || !data || data.length === 0) { fetchTrends(); } };
-  const addTrendComment = async (id: string, text: string) => { if (!currentUser) return; const newComment: Comment = { id: Date.now().toString(), agentName: currentUser.displayName || '학생', role: 'User', text, likes: 0, createdAt: '방금 전', isUser: true, uid: currentUser.uid, replies: [] }; setTrends(prev => prev.map(t => t.id === id ? { ...t, comments: [...t.comments, newComment] } : t)); const { error } = await supabase.from('comments').insert({ trend_id: id, agent_name: currentUser.displayName, role: 'User', text, is_user: true, uid: currentUser.uid }); if (error) { fetchTrends(); } };
+  const deleteTrend = async (id: string) => { setTrends(prev => prev.filter(t => t.id !== id)); setTrendListItems(prev => prev.filter(t => t.id !== id)); await supabase.from('comments').delete().eq('trend_id', id); const { error, data } = await supabase.from('trends').delete().eq('id', id).select(); if (error || !data || data.length === 0) { fetchTrends(); } };
+  const addTrendComment = async (id: string, text: string) => { if (!currentUser) return; const newComment: Comment = { id: Date.now().toString(), agentName: currentUser.displayName || '학생', role: 'User', text, likes: 0, createdAt: '방금 전', isUser: true, uid: currentUser.uid, replies: [] }; setTrends(prev => prev.map(t => t.id === id ? { ...t, comments: [...t.comments, newComment] } : t)); setTrendListItems(prev => prev.map(t => t.id === id ? { ...t, commentCount: (t.commentCount || 0) + 1 } : t)); const { error } = await supabase.from('comments').insert({ trend_id: id, agent_name: currentUser.displayName, role: 'User', text, is_user: true, uid: currentUser.uid }); if (error) { fetchTrends(); } };
   const addTrendReply = async (id: string, pid: string | number, text: string) => { if (!currentUser) return; const newReply: Comment = { id: Date.now().toString(), agentName: currentUser.displayName || '학생', role: 'User', text, likes: 0, createdAt: '방금 전', isUser: true, uid: currentUser.uid, replies: [] }; setTrends(prev => prev.map(t => { if (t.id === id) { const addReply = (comments: Comment[]): Comment[] => comments.map(c => { if (c.id === pid) return { ...c, replies: [...(c.replies || []), newReply] }; if (c.replies) return { ...c, replies: addReply(c.replies) }; return c; }); return { ...t, comments: addReply(t.comments) }; } return t; })); const { error } = await supabase.from('comments').insert({ trend_id: id, parent_comment_id: pid, agent_name: currentUser.displayName, role: 'User', text, is_user: true, uid: currentUser.uid }); if (error) { fetchTrends(); } };
-  const deleteTrendComment = async (id: string, cid: string | number) => { const { error, data } = await supabase.from('comments').delete().eq('id', cid).select(); if (error || !data || data.length === 0) { fetchTrends(); } };
+  const deleteTrendComment = async (id: string, cid: string | number) => { setTrends(prev => prev.map(t => t.id === id ? { ...t, comments: t.comments.filter(c => c.id !== cid) } : t)); setTrendListItems(prev => prev.map(t => t.id === id ? { ...t, commentCount: Math.max(0, (t.commentCount || 0) - 1) } : t)); const { error, data } = await supabase.from('comments').delete().eq('id', cid).select(); if (error || !data || data.length === 0) { fetchTrends(); } };
   const addVote = async (vote: any) => {
     const tempId = `temp-${Date.now()}`;
     const optimisticVote: VoteItem = {
@@ -1199,7 +1163,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       fetchVotes();
     }
   };
-  const deleteVote = async (id: string) => { setVotes(prev => prev.filter(v => v.id !== id)); await supabase.from('comments').delete().eq('vote_id', id); const { error, data } = await supabase.from('votes').delete().eq('id', id).select(); if (error || !data || data.length === 0) { fetchVotes(); } };
+  const deleteVote = async (id: string) => { setVotes(prev => prev.filter(v => v.id !== id)); setVoteListItems(prev => prev.filter(v => v.id !== id)); await supabase.from('comments').delete().eq('vote_id', id); const { error, data } = await supabase.from('votes').delete().eq('id', id).select(); if (error || !data || data.length === 0) { fetchVotes(); } };
   const castVote = async (voteId: string, choice: 'A' | 'B') => {
     if (!currentUser) { openLoginModal(); return; }
     const currentVoteItem = votes.find(v => v.id === voteId);
@@ -1210,6 +1174,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const newVotesA = currentVoteItem.votesA + (choice === 'A' ? 1 : 0) - (previousChoice === 'A' ? 1 : 0);
     const newVotesB = currentVoteItem.votesB + (choice === 'B' ? 1 : 0) - (previousChoice === 'B' ? 1 : 0);
     setVotes(prev => prev.map(v => v.id === voteId ? { ...v, myVote: choice, votesA: newVotesA, votesB: newVotesB } : v));
+    setVoteListItems(prev => prev.map(v => v.id === voteId ? { ...v, myVote: choice, votesA: newVotesA, votesB: newVotesB } : v));
 
     try {
       const { error } = await supabase.rpc('cast_vote', {
@@ -1221,11 +1186,12 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       console.error("Vote failed:", e);
       alert("투표 처리에 실패했습니다: " + (e.message || "Unknown error"));
       setVotes(prev => prev.map(v => v.id === voteId ? { ...v, myVote: previousChoice, votesA: currentVoteItem.votesA, votesB: currentVoteItem.votesB } : v));
+      setVoteListItems(prev => prev.map(v => v.id === voteId ? { ...v, myVote: previousChoice, votesA: currentVoteItem.votesA, votesB: currentVoteItem.votesB } : v));
     }
   };
-  const addVoteComment = async (id: string, text: string) => { if (!currentUser) return; const newComment: Comment = { id: Date.now().toString(), agentName: currentUser.displayName || '학생', role: 'User', text, likes: 0, createdAt: '방금 전', isUser: true, uid: currentUser.uid, replies: [] }; setVotes(prev => prev.map(v => v.id === id ? { ...v, comments: [...v.comments, newComment] } : v)); const { error } = await supabase.from('comments').insert({ vote_id: id, agent_name: currentUser.displayName, role: 'User', text, is_user: true, uid: currentUser.uid }); if (error) { fetchVotes(); } };
+  const addVoteComment = async (id: string, text: string) => { if (!currentUser) return; const newComment: Comment = { id: Date.now().toString(), agentName: currentUser.displayName || '학생', role: 'User', text, likes: 0, createdAt: '방금 전', isUser: true, uid: currentUser.uid, replies: [] }; setVotes(prev => prev.map(v => v.id === id ? { ...v, comments: [...v.comments, newComment] } : v)); setVoteListItems(prev => prev.map(v => v.id === id ? { ...v, commentCount: (v.commentCount || 0) + 1 } : v)); const { error } = await supabase.from('comments').insert({ vote_id: id, agent_name: currentUser.displayName, role: 'User', text, is_user: true, uid: currentUser.uid }); if (error) { fetchVotes(); } };
   const addVoteReply = async (id: string, pid: string | number, text: string) => { if (!currentUser) return; const newReply: Comment = { id: Date.now().toString(), agentName: currentUser.displayName || '학생', role: 'User', text, likes: 0, createdAt: '방금 전', isUser: true, uid: currentUser.uid, replies: [] }; setVotes(prev => prev.map(v => { if (v.id === id) { const addReply = (comments: Comment[]): Comment[] => comments.map(c => { if (c.id === pid) return { ...c, replies: [...(c.replies || []), newReply] }; if (c.replies) return { ...c, replies: addReply(c.replies) }; return c; }); return { ...v, comments: addReply(v.comments) }; } return v; })); const { error } = await supabase.from('comments').insert({ vote_id: id, parent_comment_id: pid, agent_name: currentUser.displayName, role: 'User', text, is_user: true, uid: currentUser.uid }); if (error) { fetchVotes(); } };
-  const deleteVoteComment = async (id: string, cid: string | number) => { const { error, data } = await supabase.from('comments').delete().eq('id', cid).select(); if (error || !data || data.length === 0) { fetchVotes(); } };
+  const deleteVoteComment = async (id: string, cid: string | number) => { setVotes(prev => prev.map(v => v.id === id ? { ...v, comments: v.comments.filter(c => c.id !== cid) } : v)); setVoteListItems(prev => prev.map(v => v.id === id ? { ...v, commentCount: Math.max(0, (v.commentCount || 0) - 1) } : v)); const { error, data } = await supabase.from('comments').delete().eq('id', cid).select(); if (error || !data || data.length === 0) { fetchVotes(); } };
   // Simple deduplication for view counts to prevent double counting (especially in StrictMode)
   const viewCountGuard = React.useRef<Set<string>>(new Set());
 
@@ -1272,9 +1238,9 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       viewCountGuard.current.delete(guardKey);
     }
   };
-  const toggleLikePost = async (id: string) => { const isLiked = likedPostIds.has(id); const modifier = isLiked ? -1 : 1; setPosts(prev => prev.map(p => p.id === id ? { ...p, likeCount: Math.max(0, p.likeCount + modifier) } : p)); setLikedPostIds(prev => { const next = new Set(prev); if (isLiked) next.delete(id); else next.add(id); return next; }); try { const { data } = await supabase.from('posts').select('like_count').eq('id', id).single(); if (data) await supabase.from('posts').update({ like_count: Math.max(0, data.like_count + modifier) }).eq('id', id); } catch (e) { console.error(e); } };
-  const toggleLikeTrend = async (id: string) => { const isLiked = likedTrendIds.has(id); const modifier = isLiked ? -1 : 1; setTrends(prev => prev.map(t => t.id === id ? { ...t, likeCount: Math.max(0, t.likeCount + modifier) } : t)); setLikedTrendIds(prev => { const next = new Set(prev); if (isLiked) next.delete(id); else next.add(id); return next; }); try { const { data } = await supabase.from('trends').select('like_count').eq('id', id).single(); if (data) await supabase.from('trends').update({ like_count: Math.max(0, data.like_count + modifier) }).eq('id', id); } catch (e) { console.error(e); } };
-  const toggleLikeVote = async (id: string) => { const isLiked = likedVoteIds.has(id); const modifier = isLiked ? -1 : 1; setVotes(prev => prev.map(v => v.id === id ? { ...v, likeCount: Math.max(0, v.likeCount + modifier) } : v)); setLikedVoteIds(prev => { const next = new Set(prev); if (isLiked) next.delete(id); else next.add(id); return next; }); try { const { data } = await supabase.from('votes').select('like_count').eq('id', id).single(); if (data) await supabase.from('votes').update({ like_count: Math.max(0, data.like_count + modifier) }).eq('id', id); } catch (e) { console.error(e); } };
+  const toggleLikePost = async (id: string) => { const isLiked = likedPostIds.has(id); const modifier = isLiked ? -1 : 1; setPosts(prev => prev.map(p => p.id === id ? { ...p, likeCount: Math.max(0, p.likeCount + modifier) } : p)); setFeedPosts(prev => prev.map(p => p.id === id ? { ...p, likeCount: Math.max(0, p.likeCount + modifier) } : p)); setLikedPostIds(prev => { const next = new Set(prev); if (isLiked) next.delete(id); else next.add(id); return next; }); try { const { data } = await supabase.from('posts').select('like_count').eq('id', id).single(); if (data) await supabase.from('posts').update({ like_count: Math.max(0, data.like_count + modifier) }).eq('id', id); } catch (e) { console.error(e); } };
+  const toggleLikeTrend = async (id: string) => { const isLiked = likedTrendIds.has(id); const modifier = isLiked ? -1 : 1; setTrends(prev => prev.map(t => t.id === id ? { ...t, likeCount: Math.max(0, t.likeCount + modifier) } : t)); setTrendListItems(prev => prev.map(t => t.id === id ? { ...t, likeCount: Math.max(0, t.likeCount + modifier) } : t)); setLikedTrendIds(prev => { const next = new Set(prev); if (isLiked) next.delete(id); else next.add(id); return next; }); try { const { data } = await supabase.from('trends').select('like_count').eq('id', id).single(); if (data) await supabase.from('trends').update({ like_count: Math.max(0, data.like_count + modifier) }).eq('id', id); } catch (e) { console.error(e); } };
+  const toggleLikeVote = async (id: string) => { const isLiked = likedVoteIds.has(id); const modifier = isLiked ? -1 : 1; setVotes(prev => prev.map(v => v.id === id ? { ...v, likeCount: Math.max(0, v.likeCount + modifier) } : v)); setVoteListItems(prev => prev.map(v => v.id === id ? { ...v, likeCount: Math.max(0, v.likeCount + modifier) } : v)); setLikedVoteIds(prev => { const next = new Set(prev); if (isLiked) next.delete(id); else next.add(id); return next; }); try { const { data } = await supabase.from('votes').select('like_count').eq('id', id).single(); if (data) await supabase.from('votes').update({ like_count: Math.max(0, data.like_count + modifier) }).eq('id', id); } catch (e) { console.error(e); } };
   const toggleSavePost = (id: string) => { const s = new Set(savedPostIds); if (s.has(id)) s.delete(id); else s.add(id); setSavedPostIds(s); };
   const updateCommentTreeLikes = (comments: Comment[], targetId: string | number, modifier: number): Comment[] => { return comments.map(c => { if (c.id === targetId) return { ...c, likes: Math.max(0, c.likes + modifier) }; if (c.replies && c.replies.length > 0) return { ...c, replies: updateCommentTreeLikes(c.replies, targetId, modifier) }; return c; }); };
   const toggleLikeComment = async (type: 'POST' | 'TREND' | 'VOTE', itemId: string, commentId: number | string) => { const key = `${type}-${itemId}-${commentId}`; const isLiked = likedCommentIds.has(key); const modifier = isLiked ? -1 : 1; setLikedCommentIds(prev => { const next = new Set(prev); if (isLiked) next.delete(key); else next.add(key); return next; }); if (type === 'POST') setPosts(prev => prev.map(p => p.id === itemId ? { ...p, comments: updateCommentTreeLikes(p.comments, commentId, modifier) } : p)); else if (type === 'TREND') setTrends(prev => prev.map(t => t.id === itemId ? { ...t, comments: updateCommentTreeLikes(t.comments, commentId, modifier) } : t)); else if (type === 'VOTE') setVotes(prev => prev.map(v => v.id === itemId ? { ...v, comments: updateCommentTreeLikes(v.comments, commentId, modifier) } : v)); try { const { data } = await supabase.from('comments').select('likes').eq('id', commentId).single(); if (data) await supabase.from('comments').update({ likes: Math.max(0, data.likes + modifier) }).eq('id', commentId); } catch (e) { console.error(e); } };
