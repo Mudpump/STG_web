@@ -1045,9 +1045,28 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return () => { subscription.unsubscribe(); supabase.removeChannel(channel); };
   }, []);
 
-  const loginWithGoogle = async () => { const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' }); if (error) alert(error.message); };
+  const loginWithGoogle = async () => { 
+    const { error } = await supabase.auth.signInWithOAuth({ 
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
+      }
+    }); 
+    if (error) alert(error.message); 
+  };
   const loginWithEmail = async (email: string, pw: string) => { const { error } = await supabase.auth.signInWithPassword({ email, password: pw }); if (error) throw error; };
-  const signupWithEmail = async (email: string, pw: string, nickname: string, grade: GradeType) => { const { error } = await supabase.auth.signUp({ email, password: pw, options: { data: { full_name: nickname, grade, points: 0 } } }); if (error) throw error; alert('이메일 확인 필요'); };
+  const signupWithEmail = async (email: string, pw: string, nickname: string, grade: GradeType) => { 
+    const { error } = await supabase.auth.signUp({ 
+      email, 
+      password: pw, 
+      options: { 
+        data: { full_name: nickname, grade, points: 0 },
+        emailRedirectTo: window.location.origin
+      } 
+    }); 
+    if (error) throw error; 
+    alert('이메일 확인 필요'); 
+  };
   const checkNickname = async (nickname: string) => {
     const { data, error } = await supabase.from('agents').select('nickname').eq('nickname', nickname).maybeSingle();
     if (error && error.code !== 'PGRST116') return false;
