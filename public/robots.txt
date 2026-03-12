@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://angle-angle.vercel.app/sitemap.xml

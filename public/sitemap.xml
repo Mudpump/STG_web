@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- 메인 페이지 -->
+  <url>
+    <loc>https://angle-angle.vercel.app/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <!-- 탐구줍줍 -->
+  <url>
+    <loc>https://angle-angle.vercel.app/#/feed</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <!-- 이슈떡상 -->
+  <url>
+    <loc>https://angle-angle.vercel.app/#/archive</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <!-- 토론찍먹 -->
+  <url>
+    <loc>https://angle-angle.vercel.app/#/arena</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <!-- 세특 필수 가이드 -->
+  <url>
+    <loc>https://angle-angle.vercel.app/#/brain</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <!-- 학과 정보 (주요 교수님) -->
+  <url>
+    <loc>https://angle-angle.vercel.app/#/major/prof-cs</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://angle-angle.vercel.app/#/major/prof-med</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://angle-angle.vercel.app/#/major/prof-biz-1</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://angle-angle.vercel.app/#/major/prof-elec-2</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+</urlset>
