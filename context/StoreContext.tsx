@@ -1022,7 +1022,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => { fetchPosts(); fetchFeedPosts({ page: 1 }); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'trends' }, () => { fetchTrends(); fetchTrendList({ page: 1 }); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'votes' }, () => { fetchVotes(); fetchVoteList({ page: 1 }); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_scores' }, fetchWeeklyProgress)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_scores' }, () => { fetchWeeklyProgress(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'user_answers' }, () => { fetchLeaderboard(); fetchWeeklyProgress(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload) => {
         if (currentUser && payload.new && (payload.new as any).id === currentUser.uid) {
