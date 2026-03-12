@@ -1,10 +1,9 @@
 
 import { Type } from "@google/genai";
 import { CategoryId } from '../types';
-import { CATEGORY_IMAGES } from '../constants';
+import { CATEGORY_IMAGES, TREND_IMAGE_POOL } from '../constants';
 import { getRandomCategory } from '../utils/aiMappings';
 import { ai, MODEL_NAME, cleanText, fetchCastFromDB } from './utils';
-import { checkImageAvailability } from '../utils/imageValidator';
 
 // --- Shared Instructions ---
 
@@ -80,14 +79,53 @@ const QUIZ_SCHEMA = {
 
 // --- Helper: Image Selector ---
 async function selectValidatedImage(keyword: string, categoryId: string, log: (msg: string) => void): Promise<string> {
-    // User Request: Use Unsplash images for appropriate background.
-    // We utilize the curated Unsplash images mapped in CATEGORY_IMAGES.
-    // This ensures high quality and relevance to the broad category.
+    log(`🖼️ 이미지 선택: 키워드("${keyword}") 기반 이미지 검색 시작 (${categoryId})`);
+
+    const normalizedKeyword = keyword.toLowerCase();
     
-    log(`🖼️ 이미지 선택: Unsplash 배경 이미지 설정 (${categoryId})`);
+    // 1. Filter by Category
+    const categoryImages = TREND_IMAGE_POOL.filter(img => img.categoryId === categoryId);
     
-    const imageUrl = CATEGORY_IMAGES[categoryId] || CATEGORY_IMAGES['ALL'];
-    return imageUrl;
+    // Choose pool to search (category-specific or all if category is empty)
+    const searchPool = categoryImages.length > 0 ? categoryImages : TREND_IMAGE_POOL;
+
+    // 2. Score images based on tag matches
+    let bestImages = [];
+    let maxScore = -1;
+
+    for (const img of searchPool) {
+        let score = 0;
+        for (const tag of img.tags) {
+            if (normalizedKeyword.includes(tag.toLowerCase()) || tag.toLowerCase().includes(normalizedKeyword)) {
+                score++;
+            }
+        }
+        
+        if (score > maxScore && score > 0) {
+            maxScore = score;
+            bestImages = [img];
+        } else if (score === maxScore && score > 0) {
+            bestImages.push(img);
+        }
+    }
+
+    // 3. Select Image
+    if (bestImages.length > 0) {
+        // Match found! Pick random from best matches
+        const selected = bestImages[Math.floor(Math.random() * bestImages.length)];
+        log(`🖼️ 연관 이미지 발견! (태그 매치: ${maxScore}점)`);
+        return selected.url;
+    } else if (categoryImages.length > 0) {
+        // No tag match, but category pool exists. Pick random from category.
+        const selected = categoryImages[Math.floor(Math.random() * categoryImages.length)];
+        log(`🖼️ 키워드 매칭 실패. 카테고리 내 랜덤 이미지 제공.`);
+        return selected.url;
+    }
+
+    // 4. Ultimate Fallback
+    log(`🖼️ 매칭 실패. 기본 카테고리 이미지 제공.`);
+    const fallbackUrl = CATEGORY_IMAGES[categoryId] || CATEGORY_IMAGES['ALL'];
+    return fallbackUrl;
 }
 
 // --- Trend Agents ---

@@ -734,3 +734,58 @@ export const CATEGORY_IMAGES: Record<string, string> = {
   'ALL': 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&q=80&w=800',
   'MY_PROFS': 'https://images.unsplash.com/photo-1544531586-fde5298cdd40?auto=format&fit=crop&q=80&w=800' // Added dummy image for type safety
 };
+
+export interface TrendImage {
+  url: string;
+  tags: string[];
+  categoryId: string;
+}
+
+export const TREND_IMAGE_POOL: TrendImage[] = [
+  // 1. 전기·전자·반도체 (ELEC_SEMI)
+  { url: 'https://images.unsplash.com/photo-1584677123777-742161156eb7?q=80&w=3270&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['semiconductor', 'chip', 'cleanroom', 'elec_semi', '메모리 반도체', '미세 공정'], categoryId: 'ELEC_SEMI' },
+  { url: 'https://images.unsplash.com/photo-1540761352041-7d28666d4e37?q=80&w=3024&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['circuit_board', 'hardware', 'component', 'elec_semi', '회로 설계', '전자기기'], categoryId: 'ELEC_SEMI' },
+  { url: 'https://images.unsplash.com/photo-1413882353314-73389f63b6fd?q=80&w=3270&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['power_grid', 'renewable_energy', 'electricity', 'elec_semi', '전력망', '에너지 혁명'], categoryId: 'ELEC_SEMI' },
+
+  // 2. 컴퓨터·SW·AI (CS_AI)
+  { url: 'https://images.unsplash.com/photo-1697577418970-95d99b5a55cf?q=80&w=1596&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['artificial_intelligence', 'digital_brain', 'neural_network', 'cs_ai', 'AI', '딥러닝'], categoryId: 'CS_AI' },
+  { url: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?q=80&w=2069&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['coding', 'software_development', 'screen', 'cs_ai', '프로그래밍', '알고리즘'], categoryId: 'CS_AI' },
+  { url: 'https://images.unsplash.com/photo-1529078155058-5d716f45d604?q=80&w=2069&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['big_data', 'server_room', 'visualization', 'cs_ai', '데이터 분석', '클라우드'], categoryId: 'CS_AI' },
+  { url: 'https://images.unsplash.com/photo-1605647540924-852290f6b0d5?q=80&w=3237&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['virtual_reality', 'metaverse', 'digital_space', 'cs_ai', 'VR/AR', '가상 세계'], categoryId: 'CS_AI' },
+
+  // 3. 기계·로봇·모빌리티 (MECH_ROBOT)
+  { url: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['robot_arm', 'automation', 'future_factory', 'mech_robot', '로보틱스', '자동화'], categoryId: 'MECH_ROBOT' },
+  { url: 'https://images.unsplash.com/photo-1733073277493-c0c895544b75?q=80&w=2069&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['autonomous_car', 'mobility', 'electric_vehicle', 'mech_robot', '자율주행', '미래차'], categoryId: 'MECH_ROBOT' },
+  { url: 'https://images.unsplash.com/photo-1517976487492-5750f3195933?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['aerospace', 'rocket', 'satellite', 'mech_robot', '우주 항공', '발사체'], categoryId: 'MECH_ROBOT' },
+  { url: 'https://images.unsplash.com/photo-1498084393753-b411b2d26b34?q=80&w=2532&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['smart_city', 'architecture', 'cityscape', 'mech_robot', '스마트 시티', '도시 공학'], categoryId: 'MECH_ROBOT' },
+
+  // 4. 화학·에너지·신소재 (CHEM_MAT)
+  { url: 'https://plus.unsplash.com/premium_photo-1676325102003-6fd13c562d41?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['chemistry_lab', 'flask', 'experiment', 'chem_mat', '정밀 화학', '실험실'], categoryId: 'CHEM_MAT' },
+  { url: 'https://images.unsplash.com/photo-1727362187633-11a87da5ae7d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['new_material', 'graphene', 'microscopic', 'chem_mat', '신소재', '나노 기술'], categoryId: 'CHEM_MAT' },
+  { url: 'https://images.unsplash.com/photo-1613665641266-7bb90dd86a8b?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['hydrogen_energy', 'eco_friendly', 'sustainability', 'chem_mat', '친환경 에너지', '탄소 중립'], categoryId: 'CHEM_MAT' },
+
+  // 5. 생명·바이오·의약 (BIO_MED)
+  { url: 'https://images.unsplash.com/photo-1732046801426-f32529468176?q=80&w=2532&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['dna_helix', 'gene_editing', 'biotechnology', 'bio_med', '유전 공학', '바이오'], categoryId: 'BIO_MED' },
+  { url: 'https://images.unsplash.com/photo-1757152962882-6bf8495b324d?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['medical_tech', 'surgery', 'healthcare', 'bio_med', '의학', '첨단 수술'], categoryId: 'BIO_MED' },
+  { url: 'https://images.unsplash.com/photo-1735754966663-97581b72352a?q=80&w=2532&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['drug_discovery', 'vaccine', 'pharmacy', 'bio_med', '신약 개발', '약학'], categoryId: 'BIO_MED' },
+  { url: 'https://images.unsplash.com/photo-1632236542159-809925d85fc0?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['veterinary', 'animal_care', 'nature', 'bio_med', '수의학', '생태계'], categoryId: 'BIO_MED' },
+
+  // 6. 경영·경제·통계 (BIZ_ECON)
+  { url: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['stock_market', 'finance', 'candlestick_chart', 'biz_econ', '금융', '경제 성장'], categoryId: 'BIZ_ECON' },
+  { url: 'https://images.unsplash.com/photo-1562577308-9e66f0c65ce5?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['marketing', 'brand_strategy', 'consumer', 'biz_econ', '비즈니스', '마케팅'], categoryId: 'BIZ_ECON' },
+  { url: 'https://images.unsplash.com/photo-1625296276703-3fbc924f07b5?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['statistics', 'data_graph', 'probability', 'biz_econ', '통계학', '여론 분석'], categoryId: 'BIZ_ECON' },
+
+  // 7. 사회과학·미디어·심리 (SOC_MEDIA)
+  { url: 'https://images.unsplash.com/photo-1499488256403-b872eddb408c?q=80&w=2532&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['society_crowd', 'urban_life', 'human_interaction', 'soc_media', '사회학', '인구 문제'], categoryId: 'SOC_MEDIA' },
+  { url: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['media_production', 'news_broadcast', 'content_creation', 'soc_media', '미디어', '신문방송'], categoryId: 'SOC_MEDIA' },
+  { url: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['psychology_brain', 'mental_health', 'counseling', 'soc_media', '심리학', '인지 과학'], categoryId: 'SOC_MEDIA' },
+  { url: 'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['politics_election', 'global_conflict', 'diplomacy', 'soc_media', '정치외교', '법학'], categoryId: 'SOC_MEDIA' },
+
+  // 8. 인문·어문·교육 (HUM_EDU)
+  { url: 'https://images.unsplash.com/photo-1505664194779-8beaceb93744?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['philosophy', 'thinker_statue', 'logic', 'hum_edu', '철학', '윤리 딜레마'], categoryId: 'HUM_EDU' },
+  { url: 'https://images.unsplash.com/photo-1582034438152-77bc94ffa6ae?q=80&w=2046&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['ancient_history', 'artifact', 'archaeology', 'hum_edu', '역사', '박물관'], categoryId: 'HUM_EDU' },
+  { url: 'https://images.unsplash.com/photo-1610116306796-6fea9f4fae38?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['literature', 'old_books', 'writing', 'hum_edu', '국문학', '영문학', '서사'], categoryId: 'HUM_EDU' },
+  { url: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['education', 'classroom_future', 'online_learning', 'hum_edu', '교육학', '에듀테크'], categoryId: 'HUM_EDU' },
+  { url: 'https://images.unsplash.com/photo-1563509769909-174be967b5df?q=80&w=2955&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', tags: ['linguistics', 'global_communication', 'translation', 'hum_edu', '언어학', '통번역'], categoryId: 'HUM_EDU' }
+];
+
