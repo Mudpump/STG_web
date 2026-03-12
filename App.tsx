@@ -28,6 +28,7 @@ import { BreakPage } from './pages/BreakPage';
 import { AdmissionOfficerCard, StrategySection, ProfessorList } from './components/HomeWidgets';
 import { ArenaHotMatchWidget, ArenaBestCommentWidget } from './components/ArenaWidgets';
 import { LeaderboardWidget } from './components/LeaderboardWidget';
+import { getKSTMonday, getKSTDayOfWeek, toKSTDateString } from './utils/kstDateUtils';
 import { PROFESSORS, CATEGORIES, MAJOR_DETAILS } from './constants';
 
 // ScrollToTop Component
@@ -1042,8 +1043,15 @@ const ArenaPage: React.FC = () => {
 
 const MyPage: React.FC = () => {
     const navigate = useNavigate();
-    const { posts, savedPostIds, currentUser, logout, openLoginModal, followedProfessorIds, weeklyProgress, deletePost } = useStore();
+    const { posts, savedPostIds, currentUser, logout, openLoginModal, followedProfessorIds, weeklyProgress, fetchWeeklyProgress, deletePost } = useStore();
     const [activeList, setActiveList] = useState<'NONE' | 'MY_POSTS' | 'SAVED_POSTS' | 'FOLLOWED_PROFS'>('NONE');
+
+    // MyPage 진입 시 weeklyProgress 갱신 (클로저 문제 방지)
+    useEffect(() => {
+        if (currentUser) {
+            fetchWeeklyProgress(currentUser.uid);
+        }
+    }, [currentUser?.uid]);
 
     const scrollRef = React.useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -1244,18 +1252,15 @@ const MyPage: React.FC = () => {
             {/* Weekly Progress Chart */}
             {(() => {
                 const dayLabels = ['월', '화', '수', '목', '금', '토', '일'];
-                const now = new Date();
-                const todayDow = now.getDay() === 0 ? 6 : now.getDay() - 1; // 0=Mon, 6=Sun
+                const todayDow = getKSTDayOfWeek(); // KST 기준 0=월, 6=일
 
-                // Build 7-day data array
-                const monday = new Date(now);
-                monday.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
-                monday.setHours(0, 0, 0, 0);
+                // Build 7-day data array (KST 기준)
+                const monday = getKSTMonday();
 
                 const dayData = dayLabels.map((_, idx) => {
                     const date = new Date(monday);
-                    date.setDate(monday.getDate() + idx);
-                    const dateStr = date.toISOString().split('T')[0];
+                    date.setUTCDate(monday.getUTCDate() + idx);
+                    const dateStr = toKSTDateString(date);
                     const found = weeklyProgress.find(d => d.score_date === dateStr);
                     return {
                         points: found?.points || 0,
@@ -1283,23 +1288,25 @@ const MyPage: React.FC = () => {
                                 const hasData = d.points > 0;
 
                                 return (
-                                    <div key={idx} className="flex flex-col items-center flex-1 gap-1">
-                                        {hasData && (
-                                            <span className="text-[10px] font-bold text-gray-500">{d.points}</span>
-                                        )}
-                                        <div
-                                            className={`w-full rounded-t-lg transition-all duration-500 ${isToday && hasData
-                                                ? 'border-2 border-gray-900'
-                                                : ''
-                                                }`}
-                                            style={{
-                                                height: `${barHeight}%`,
-                                                backgroundColor: hasData
-                                                    ? isToday ? '#CCFF00' : 'rgba(139, 92, 246, 0.5)'
-                                                    : '#e5e7eb',
-                                                minHeight: hasData ? '12px' : '4px',
-                                            }}
-                                        />
+                                    <div key={idx} className="flex flex-col items-center flex-1 h-full gap-1">
+                                        <div className="flex-1 w-full flex flex-col items-center justify-end gap-1">
+                                            {hasData && (
+                                                <span className="text-[10px] font-bold text-gray-500">{d.points}</span>
+                                            )}
+                                            <div
+                                                className={`w-full rounded-t-lg transition-all duration-500 ${isToday && hasData
+                                                    ? 'border-2 border-gray-900'
+                                                    : ''
+                                                    }`}
+                                                style={{
+                                                    height: `${barHeight}%`,
+                                                    backgroundColor: hasData
+                                                        ? isToday ? '#CCFF00' : 'rgba(139, 92, 246, 0.5)'
+                                                        : '#e5e7eb',
+                                                    minHeight: hasData ? '12px' : '4px',
+                                                }}
+                                            />
+                                        </div>
                                         <span className={`text-[11px] font-bold ${isToday ? 'text-gray-900' : 'text-gray-400'}`}>
                                             {dayLabels[idx]}
                                         </span>

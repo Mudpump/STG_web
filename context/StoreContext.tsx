@@ -6,6 +6,7 @@ import { runEpisodeAgent } from '../agents/episodeAgents';
 import { EPISODE_RECIPES } from '../data/episodeData';
 import { supabase } from '../utils/supabase';
 import { formatTimeAgo } from '../utils/dateUtils';
+import { getKSTDateString, getKSTMonday, toKSTDateString } from '../utils/kstDateUtils';
 import { CATEGORIES, PROFESSORS } from '../constants'; // Import CATEGORIES for iteration
 import { ProfessorTheme } from '../agents/professorAgents'; // Type import
 
@@ -36,6 +37,7 @@ interface StoreContextType {
   schoolLeaderboard: { WEEKLY: SchoolLeaderboard[], MONTHLY: SchoolLeaderboard[] };
   userRank: { WEEKLY: UserRank | null, MONTHLY: UserRank | null };
   weeklyProgress: DailyScore[];
+  fetchWeeklyProgress: (uid?: string) => Promise<void>;
   submitQuizAnswer: (trendId: string, quizIndex: number, isCorrect: boolean) => Promise<number>;
   fetchLeaderboard: () => Promise<void>;
 
@@ -778,20 +780,23 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   // --- Leaderboard & Quiz Functions ---
   const getWeekRange = () => {
-    const now = new Date();
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
-    monday.setHours(0, 0, 0, 0);
-    const weekEnd = new Date(monday);
-    weekEnd.setDate(monday.getDate() + 7);
-    return { start: monday.toISOString(), end: weekEnd.toISOString() };
+    // KST 기준 이번 주 월요일 ~ 다음 주 월요일
+    const monday = getKSTMonday();
+    // 리더보드 RPC에 넘길 때는 실제 UTC 시각으로 변환 (KST 00:00 = UTC 전날 15:00)
+    const mondayUTC = new Date(monday.getTime() - 9 * 60 * 60 * 1000);
+    const weekEndUTC = new Date(mondayUTC.getTime() + 7 * 24 * 60 * 60 * 1000);
+    return { start: mondayUTC.toISOString(), end: weekEndUTC.toISOString() };
   };
 
   const getMonthRange = () => {
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    return { start: monthStart.toISOString(), end: monthEnd.toISOString() };
+    // KST 기준 이번 달 1일 ~ 다음 달 1일
+    const kstNow = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    const y = kstNow.getUTCFullYear();
+    const m = kstNow.getUTCMonth();
+    // KST 1일 00:00 = UTC (1일 - 9시간)
+    const monthStartUTC = new Date(Date.UTC(y, m, 1) - 9 * 60 * 60 * 1000);
+    const monthEndUTC = new Date(Date.UTC(y, m + 1, 1) - 9 * 60 * 60 * 1000);
+    return { start: monthStartUTC.toISOString(), end: monthEndUTC.toISOString() };
   };
 
   const fetchLeaderboard = async () => {
@@ -863,15 +868,16 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   };
 
-  const fetchWeeklyProgress = async () => {
-    if (!currentUser) return;
+  const fetchWeeklyProgress = async (uid?: string) => {
+    const userId = uid || currentUser?.uid;
+    if (!userId) return;
     try {
-      const week = getWeekRange();
-      const mondayDate = week.start.split('T')[0]; // YYYY-MM-DD
+      // KST 기준 이번 주 월요일의 날짜 문자열
+      const mondayDate = toKSTDateString(getKSTMonday());
       const { data, error } = await supabase
         .from('daily_scores')
         .select('score_date, points, correct_count, total_count')
-        .eq('user_id', currentUser.uid)
+        .eq('user_id', userId)
         .gte('score_date', mondayDate)
         .order('score_date');
 
@@ -918,7 +924,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
 
     // 4. Update daily_scores via RPC
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const today = getKSTDateString(); // KST 기준 오늘 YYYY-MM-DD
     await supabase.rpc('upsert_daily_score', {
       p_user_id: currentUser.uid,
       p_score_date: today,
@@ -971,7 +977,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         fetchFollows(session.user.id);
         fetchUserVoteHistory(session.user.id);
         // Defer leaderboard fetch
-        setTimeout(() => { fetchLeaderboard(); fetchWeeklyProgress(); }, 100);
+        setTimeout(() => { fetchLeaderboard(); fetchWeeklyProgress(session.user.id); }, 100);
 
         // Defer profile fetch outside the auth lock scope to prevent deadlock
         setTimeout(async () => {
@@ -1437,7 +1443,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       voteListItems, voteHasMore, voteLoading, fetchVoteList, resetVoteList,
       toggleLikePost, likedPostIds, toggleLikeTrend, likedTrendIds, toggleLikeVote, likedVoteIds, toggleSavePost, savedPostIds, toggleLikeComment, likedCommentIds, isAdmin, toggleAdmin, incrementViewCount,
       pendingScenarios, generateAIPost, generateAIPostAllCategories, generateCustomPost, generateRoadmapPost, generateProfessorPost, generateAITrend, generateSourceTrend, generateSearchTrend, generateAIVote, generateAIEpisode, approveItem, approveComment, discardScenario,
-      addPoints, leaderboard, schoolLeaderboard, userRank, weeklyProgress, submitQuizAnswer, fetchLeaderboard, toggleFollowProfessor, followedProfessorIds,
+      addPoints, leaderboard, schoolLeaderboard, userRank, weeklyProgress, fetchWeeklyProgress, submitQuizAnswer, fetchLeaderboard, toggleFollowProfessor, followedProfessorIds,
       answerCounseling
     }}>
       {children}
