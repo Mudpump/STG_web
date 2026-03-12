@@ -202,9 +202,7 @@ export const QuizSection: React.FC<Props> = ({ quizzes, trendId }) => {
                                                 <span className="text-red-700">오답입니다.</span>
                                             </>
                                         )}
-                                        <span className="ml-auto text-xs text-gray-500 font-normal">
-                                            정답률 {quiz.correctRate || 68}%
-                                        </span>
+
                                     </div>
                                     <p className="text-sm text-gray-700 leading-relaxed border-t border-black/5 pt-2 mt-2">
                                         <span className="font-bold mr-1">💡 해설:</span>

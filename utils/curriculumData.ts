@@ -440,3 +440,17 @@ export function getChaptersForSemester(grade: string, semester: string, subject:
 
   return Array.from(chapters);
 }
+
+// 학기 구분 없이, 해당 학년-과목의 전체 단원을 반환 (주제 솔루션용)
+export function getAllChaptersForSubject(grade: string, subject: string): string[] {
+  const gradeData = CURRICULUM_DATA[grade];
+  if (!gradeData) return [];
+
+  const chapters = new Set<string>();
+  Object.values(gradeData).forEach(monthData => {
+    if (monthData[subject]) {
+      monthData[subject].forEach(chapter => chapters.add(chapter));
+    }
+  });
+  return Array.from(chapters);
+}

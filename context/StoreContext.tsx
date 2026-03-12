@@ -1065,6 +1065,10 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       id: tempId, categoryId: post.categoryId, authorAgent: currentUser.displayName || '나', authorRole: 'User', authorAvatarId: currentUser.avatarId, title: post.title, content: post.content, previewText: post.previewText, comments: [], viewCount: 0, likeCount: 0, createdAt: '방금 전', tags: post.tags, isUser: true, uid: currentUser.uid, targetGrade: post.targetGrade, targetProfessorId: post.targetProfessorId
     };
     setPosts(prev => [optimisticPost, ...prev]);
+    // [FIX] feedPosts(페이지네이션 리스트)에도 즉시 반영 — 탐구줍줍 피드용 (상담 글 제외)
+    if (!post.targetProfessorId) {
+      setFeedPosts(prev => [optimisticPost, ...prev]);
+    }
     const { data, error } = await supabase.from('posts').insert({
       title: post.title, content: post.content, category_id: post.categoryId, author_agent: currentUser.displayName, author_role: 'User', author_avatar_id: currentUser.avatarId || null, preview_text: post.previewText, tags: post.tags, is_user: true, uid: currentUser.uid, target_grade: post.targetGrade, target_professor_id: post.targetProfessorId
     }).select().single();
@@ -1076,6 +1080,15 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         }
         return prev.map(p => p.id === tempId ? { ...p, id: data.id } : p);
       });
+      // [FIX] feedPosts에서도 temp ID → 실제 DB ID로 교체
+      if (!post.targetProfessorId) {
+        setFeedPosts(prev => {
+          if (prev.some(p => String(p.id) === String(data.id))) {
+            return prev.filter(p => p.id !== tempId);
+          }
+          return prev.map(p => p.id === tempId ? { ...p, id: data.id } : p);
+        });
+      }
     } else {
       console.error(error);
       fetchPosts();
@@ -1084,6 +1097,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const deletePost = async (id: string) => {
     setPosts(prev => prev.filter(p => p.id !== id));
+    // [FIX] feedPosts(페이지네이션 리스트)에서도 즉시 제거
+    setFeedPosts(prev => prev.filter(p => p.id !== id));
     await supabase.from('comments').delete().eq('post_id', id);
     const { error, data } = await supabase.from('posts').delete().eq('id', id).select();
     if (error || !data || data.length === 0) { fetchPosts(); }

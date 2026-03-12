@@ -1043,7 +1043,7 @@ const ArenaPage: React.FC = () => {
 const MyPage: React.FC = () => {
     const navigate = useNavigate();
     const { posts, savedPostIds, currentUser, logout, openLoginModal, followedProfessorIds, weeklyProgress, deletePost } = useStore();
-    const [activeList, setActiveList] = useState<'NONE' | 'MY_POSTS' | 'SAVED_POSTS'>('NONE');
+    const [activeList, setActiveList] = useState<'NONE' | 'MY_POSTS' | 'SAVED_POSTS' | 'FOLLOWED_PROFS'>('NONE');
 
     const scrollRef = React.useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -1114,6 +1114,53 @@ const MyPage: React.FC = () => {
     const renderPostList = () => {
         if (activeList === 'NONE') return null;
 
+        if (activeList === 'FOLLOWED_PROFS') {
+            return (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8 animate-fade-in-up">
+                    <div className="p-4 border-b border-gray-50 font-bold text-gray-900 flex justify-between items-center">
+                        <span>팔로잉 교수</span>
+                        <button
+                            onClick={() => setActiveList('NONE')}
+                            className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+                    {followedProfessors.length === 0 ? (
+                        <div className="p-8 text-center text-gray-400 text-sm">팔로우한 교수님이 없습니다.</div>
+                    ) : (
+                        <div className="relative">
+                            <div
+                                ref={scrollRef}
+                                className="p-4 flex gap-4 overflow-x-auto no-scrollbar cursor-grab active:cursor-grabbing select-none"
+                                onPointerDown={handlePointerDown}
+                                onPointerUp={handlePointerUp}
+                                onPointerMove={handlePointerMove}
+                            >
+                                {followedProfessors.map(prof => (
+                                    <div
+                                        key={prof.id}
+                                        onClick={() => {
+                                            if (dragDistance > 5) return;
+                                            navigate(`/major/${prof.id}`);
+                                        }}
+                                        className="flex-shrink-0 flex flex-col items-center gap-2 cursor-pointer w-20"
+                                    >
+                                        <div className="w-16 h-20 rounded-xl overflow-hidden border border-gray-200">
+                                            <img src={prof.imageUrl} alt={prof.name} className="w-full h-full object-cover object-top" />
+                                        </div>
+                                        <span className="text-sm font-bold text-gray-800 text-center truncate w-full">{prof.name}</span>
+                                        <span className="text-[10px] text-gray-500 text-center truncate w-full">{prof.title}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="absolute top-0 right-0 bottom-0 w-12 bg-gradient-to-l from-white to-transparent pointer-events-none rounded-br-2xl"></div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
         const displayPosts = activeList === 'MY_POSTS' ? myPosts : savedPosts;
         const title = activeList === 'MY_POSTS' ? '내가 쓴 글' : '보관함';
 
@@ -1166,20 +1213,27 @@ const MyPage: React.FC = () => {
         <div className="p-4 md:p-0 max-w-2xl mx-auto">
             <MyCard />
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-3 gap-3 mb-4">
                 <div
                     onClick={() => setActiveList(activeList === 'MY_POSTS' ? 'NONE' : 'MY_POSTS')}
-                    className={`bg-white p-5 rounded-2xl border ${activeList === 'MY_POSTS' ? 'border-primary ring-1 ring-primary/20 bg-primary/5' : 'border-gray-100 hover:border-primary/30'} shadow-sm text-center cursor-pointer transition-all active:scale-[0.98]`}
+                    className={`bg-white p-4 md:p-5 rounded-2xl border ${activeList === 'MY_POSTS' ? 'border-primary ring-1 ring-primary/20 bg-primary/5' : 'border-gray-100 hover:border-primary/30'} shadow-sm text-center cursor-pointer transition-all active:scale-[0.98]`}
                 >
-                    <div className="text-3xl font-black text-primary mb-1">{myPostCount}</div>
-                    <div className="text-xs text-gray-500 font-bold">내가 쓴 글</div>
+                    <div className="text-2xl md:text-3xl font-black text-primary mb-1">{myPostCount}</div>
+                    <div className="text-[10px] md:text-xs text-gray-500 font-bold break-keep">내가 쓴 글</div>
                 </div>
                 <div
                     onClick={() => setActiveList(activeList === 'SAVED_POSTS' ? 'NONE' : 'SAVED_POSTS')}
-                    className={`bg-white p-5 rounded-2xl border ${activeList === 'SAVED_POSTS' ? 'border-gray-900 ring-1 ring-gray-900/20 bg-gray-50' : 'border-gray-100 hover:border-gray-300'} shadow-sm text-center cursor-pointer transition-all active:scale-[0.98]`}
+                    className={`bg-white p-4 md:p-5 rounded-2xl border ${activeList === 'SAVED_POSTS' ? 'border-gray-900 ring-1 ring-gray-900/20 bg-gray-50' : 'border-gray-100 hover:border-gray-300'} shadow-sm text-center cursor-pointer transition-all active:scale-[0.98]`}
                 >
-                    <div className="text-3xl font-black text-gray-900 mb-1">{savedCount}</div>
-                    <div className="text-xs text-gray-500 font-bold">보관함</div>
+                    <div className="text-2xl md:text-3xl font-black text-gray-900 mb-1">{savedCount}</div>
+                    <div className="text-[10px] md:text-xs text-gray-500 font-bold break-keep">보관함</div>
+                </div>
+                <div
+                    onClick={() => setActiveList(activeList === 'FOLLOWED_PROFS' ? 'NONE' : 'FOLLOWED_PROFS')}
+                    className={`bg-white p-4 md:p-5 rounded-2xl border ${activeList === 'FOLLOWED_PROFS' ? 'border-indigo-500 ring-1 ring-indigo-500/20 bg-indigo-50' : 'border-gray-100 hover:border-indigo-300'} shadow-sm text-center cursor-pointer transition-all active:scale-[0.98]`}
+                >
+                    <div className="text-2xl md:text-3xl font-black text-indigo-500 mb-1">{followedProfessors.length}</div>
+                    <div className="text-[10px] md:text-xs text-gray-500 font-bold break-keep">팔로잉 교수</div>
                 </div>
             </div>
 
@@ -1214,7 +1268,6 @@ const MyPage: React.FC = () => {
                 const totalPoints = dayData.reduce((s, d) => s + d.points, 0);
                 const correctCount = dayData.reduce((s, d) => s + d.correct, 0);
                 const totalCount = dayData.reduce((s, d) => s + d.total, 0);
-                const accuracy = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
 
                 return (
                     <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm mb-6">
@@ -1256,14 +1309,10 @@ const MyPage: React.FC = () => {
                         </div>
 
                         {/* Stats Summary */}
-                        <div className="grid grid-cols-3 gap-3 pt-3 border-t border-gray-100">
+                        <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
                             <div className="text-center">
                                 <div className="text-lg font-black text-primary">{totalPoints} pt</div>
                                 <div className="text-[10px] text-gray-500 font-bold">총점</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-lg font-black text-gray-900">{accuracy}%</div>
-                                <div className="text-[10px] text-gray-500 font-bold">정답률</div>
                             </div>
                             <div className="text-center">
                                 <div className="text-lg font-black text-gray-900">{correctCount}/{totalCount}</div>
@@ -1274,40 +1323,7 @@ const MyPage: React.FC = () => {
                 );
             })()}
 
-            {/* Followed Professors Section */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
-                <div className="p-4 border-b border-gray-50 font-bold text-gray-900 flex items-center justify-between">
-                    <span>팔로우한 교수님</span>
-                    <span className="text-xs text-gray-400 font-normal">{followedProfessors.length}명</span>
-                </div>
-                {followedProfessors.length === 0 ? (
-                    <div className="p-8 text-center text-gray-400 text-sm">아직 팔로우한 교수님이 없습니다.</div>
-                ) : (
-                    <div
-                        ref={scrollRef}
-                        className="p-4 flex gap-4 overflow-x-auto no-scrollbar cursor-grab active:cursor-grabbing select-none"
-                        onPointerDown={handlePointerDown}
-                        onPointerUp={handlePointerUp}
-                        onPointerMove={handlePointerMove}
-                    >
-                        {followedProfessors.map(prof => (
-                            <div
-                                key={prof.id}
-                                onClick={() => {
-                                    if (dragDistance > 5) return;
-                                    navigate(`/major/${prof.id}`);
-                                }}
-                                className="flex-shrink-0 flex flex-col items-center gap-2 cursor-pointer w-16"
-                            >
-                                <div className="w-14 h-16 rounded-xl overflow-hidden border border-gray-200">
-                                    <img src={prof.imageUrl} alt={prof.name} className="w-full h-full object-cover object-top" />
-                                </div>
-                                <span className="text-xs font-bold text-gray-800 text-center truncate w-full">{prof.name}</span>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+
 
 
             <button

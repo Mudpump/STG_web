@@ -106,8 +106,8 @@ export const ArenaDetail: React.FC = () => {
             </div>
 
             <div className="px-6 pt-4 pb-6">
-                <h1 className="text-[24px] font-black text-gray-900 mb-3 tracking-tight leading-snug">{voteItem.title}</h1>
-                <p className="text-lg text-[#222222] leading-relaxed mb-6 font-medium">{voteItem.description}</p>
+                <h1 className="text-2xl font-bold text-gray-900 mb-3 tracking-tight leading-snug">{voteItem.title}</h1>
+                <p className="text-lg text-gray-700 leading-relaxed mb-6 font-normal">{voteItem.description}</p>
 
                 {/* 투표 선택 영역 */}
                 <div className="mb-8">

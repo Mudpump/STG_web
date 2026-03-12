@@ -5,7 +5,7 @@ import { ArrowLeft, Check, Compass, Link as LinkIcon, Lightbulb, RefreshCcw, Ale
 import { CATEGORIES, PROFESSORS } from '../constants';
 import { CategoryId, GradeType } from '../types';
 import { useStore } from '../context/StoreContext';
-import { getChaptersForSemester } from '../utils/curriculumData';
+import { getChaptersForSemester, getAllChaptersForSubject } from '../utils/curriculumData';
 
 type CounselingType = 'ROADMAP' | 'CONNECTION' | 'SOLUTION';
 
@@ -71,9 +71,9 @@ export const WritePostPage: React.FC = () => {
         targetSubject: '',
         targetConcern: '',
         // Solution
+        hMajor: '',
         topicIdea: '',
-        blocker: '',
-        request: ''
+        solutionAdditionalInfo: ''
     });
 
     // Find Professor info if Counseling mode
@@ -155,12 +155,15 @@ export const WritePostPage: React.FC = () => {
                 `  - 타겟 단원명 힌트: ${hints.length > 0 ? hints.join(', ') : '없음'}\n` +
                 `  - 추가 전달사항: ${cForm.targetConcern || '없음'}\n`;
         } else if (counselingType === 'SOLUTION') {
+            const gradeKey = cForm.currentGrade === '고1' ? 'H1' : cForm.currentGrade === '고2' ? 'H2' : 'H3';
+            const solutionHints = getAllChaptersForSubject(gradeKey, cForm.targetSubject);
             builtContent = `[상담 유형: 💡 주제 팩트체크/솔루션형]\n\n` +
                 `1. 현재 학년: ${cForm.currentGrade}\n` +
-                `2. 탐구 과목: ${cForm.targetSubject}\n` +
-                `3. 생각해둔 주제: ${cForm.topicIdea}\n` +
-                `4. 현재 막히는 부분: ${cForm.blocker}\n` +
-                `5. 요청사항: ${cForm.request}`;
+                `2. 희망 학과: ${cForm.hMajor}\n` +
+                `3. 탐구 과목: ${cForm.targetSubject}\n` +
+                `4. 단원명 힌트: ${solutionHints.length > 0 ? solutionHints.join(', ') : '없음'}\n` +
+                `5. 생각해둔 주제: ${cForm.topicIdea}\n` +
+                `6. 추가 전달사항: ${cForm.solutionAdditionalInfo || '없음'}`;
         }
         return builtContent;
     };
@@ -176,7 +179,7 @@ export const WritePostPage: React.FC = () => {
             return cForm.prevSubject && cForm.prevTopic && cForm.prevRecord && cForm.targetSubject;
         }
         if (counselingType === 'SOLUTION') {
-            return cForm.currentGrade && cForm.targetSubject && cForm.topicIdea && cForm.blocker;
+            return cForm.currentGrade && cForm.hMajor && cForm.targetSubject && cForm.topicIdea;
         }
         return false;
     };
@@ -232,7 +235,12 @@ export const WritePostPage: React.FC = () => {
                 // [Modified] 상담 탭으로 바로 이동하도록 query param 추가
                 navigate(`/major/${profId}?tab=COUNSELING`);
             } else {
-                navigate('/');
+                // [Modified] 탐구줍줍 페이지가 나오도록 수정
+                if (categoryId === 'ALL') {
+                    navigate('/feed');
+                } else {
+                    navigate(`/feed/${categoryId}`);
+                }
             }
         }
     };
@@ -563,15 +571,41 @@ export const WritePostPage: React.FC = () => {
                                                 </select>
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-gray-600 mb-1">탐구 과목</label>
+                                                <label className="block text-xs font-bold text-gray-600 mb-1">희망 학과</label>
                                                 <input
-                                                    value={cForm.targetSubject}
-                                                    onChange={e => setCForm({ ...cForm, targetSubject: e.target.value })}
-                                                    placeholder="예: 화학1"
+                                                    value={cForm.hMajor}
+                                                    onChange={e => setCForm({ ...cForm, hMajor: e.target.value })}
+                                                    placeholder="예: 화학공학과"
                                                     className="w-full h-[42px] bg-gray-50 border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-primary"
                                                 />
                                             </div>
                                         </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-600 mb-1">탐구 과목</label>
+                                            <input
+                                                value={cForm.targetSubject}
+                                                onChange={e => setCForm({ ...cForm, targetSubject: e.target.value })}
+                                                placeholder="예: 화학"
+                                                className="w-full h-[42px] bg-gray-50 border border-gray-200 rounded-lg px-3 text-sm outline-none focus:border-primary"
+                                            />
+                                        </div>
+
+                                        {/* 단원명 힌트 (커리큘럼 연동) */}
+                                        {cForm.targetSubject && cForm.currentGrade && (() => {
+                                            const gradeKey = cForm.currentGrade === '고1' ? 'H1' : cForm.currentGrade === '고2' ? 'H2' : 'H3';
+                                            const hints = getAllChaptersForSubject(gradeKey, cForm.targetSubject);
+                                            return hints.length > 0 ? (
+                                                <div className="bg-white px-3 py-2 rounded-lg border border-indigo-100">
+                                                    <p className="text-[10px] font-bold text-indigo-600 mb-1">📘 {cForm.currentGrade} {cForm.targetSubject} 수업에서 배우는 단원들이에요!</p>
+                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                        {hints.map(ch => (
+                                                            <span key={ch} className="text-[10px] px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full">#{ch}</span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ) : null;
+                                        })()}
+
                                         <div>
                                             <label className="block text-xs font-bold text-gray-600 mb-1">생각해둔 주제</label>
                                             <input
@@ -582,21 +616,12 @@ export const WritePostPage: React.FC = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-amber-600 mb-1">현재 막히는 부분</label>
+                                            <label className="block text-xs font-bold text-gray-600 mb-1">추가 전달사항 <span className="font-normal text-gray-400">(선택)</span></label>
                                             <textarea
-                                                value={cForm.blocker}
-                                                onChange={e => setCForm({ ...cForm, blocker: e.target.value })}
-                                                placeholder="예: 교과서 실험은 너무 뻔한데, 촉매를 바꿔봐도 될까요?"
-                                                className="w-full h-24 bg-white border border-amber-200 rounded-lg p-3 text-sm outline-none focus:border-amber-500 resize-none placeholder:text-gray-400"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-gray-600 mb-1">요청사항</label>
-                                            <input
-                                                value={cForm.request}
-                                                onChange={e => setCForm({ ...cForm, request: e.target.value })}
-                                                placeholder="예: 실험 과정 디테일이 중요함"
-                                                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
+                                                value={cForm.solutionAdditionalInfo}
+                                                onChange={e => setCForm({ ...cForm, solutionAdditionalInfo: e.target.value })}
+                                                placeholder="예: 현재 막히는 부분, 실험 환경 제약, 요청사항 등 자유롭게 적어주세요."
+                                                className="w-full h-24 bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm outline-none focus:border-primary resize-none placeholder:text-gray-400"
                                             />
                                         </div>
                                     </div>
@@ -632,7 +657,8 @@ export const WritePostPage: React.FC = () => {
                         <div className="mb-6">
                             <label className="block text-xs font-bold text-gray-900 mb-2">관심 분야 (카테고리)</label>
                             <div className="flex flex-wrap gap-2">
-                                {CATEGORIES.filter(c => c.id !== 'ALL').map(cat => (
+                                {/* [Modified] '나의교수' 카테고리는 사용자가 직접 글을 쓸 수 없으므로 제외 */}
+                                {CATEGORIES.filter(c => c.id !== 'ALL' && c.id !== 'MY_PROFS').map(cat => (
                                     <button
                                         key={cat.id}
                                         onClick={() => setCategoryId(cat.id)}

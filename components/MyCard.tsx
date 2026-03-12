@@ -275,7 +275,7 @@ export const MyCard: React.FC = () => {
     }
 
     return (
-        <div className="bg-[#FFFDF7] border-2 border-gray-900 rounded-[32px] p-6 md:p-8 mb-6 relative overflow-hidden group hover:-translate-y-1 transition-all">
+        <div className="bg-[#FFFDF7] border-2 border-gray-900 rounded-[32px] p-6 md:p-8 mb-6 relative overflow-hidden group transition-all">
             {/* Cute Decorative Elements */}
             <div className="absolute -top-4 -right-4 text-6xl opacity-20 rotate-12 group-hover:rotate-45 transition-transform duration-500">✨</div>
             <div className="absolute -bottom-6 -left-6 text-7xl opacity-20 -rotate-12 group-hover:-rotate-45 transition-transform duration-500">🌸</div>
