@@ -31,7 +31,14 @@ export const TeacherBrainDetail: React.FC = () => {
                     </button>
                     <span className="ml-2 font-bold text-gray-900">세특 필수 가이드</span>
                 </div>
-                <button className="p-2 text-gray-400 hover:text-gray-600 rounded-full">
+                <button onClick={() => {
+                    if (navigator.share) {
+                        navigator.share({ title: article.title, text: article.subtitle, url: window.location.href });
+                    } else {
+                        navigator.clipboard.writeText(window.location.href);
+                        alert('링크가 복사되었습니다!');
+                    }
+                }} className="p-2 text-gray-400 hover:text-gray-600 rounded-full">
                     <Share2 size={20} />
                 </button>
             </div>

@@ -181,7 +181,15 @@ export const PostDetail: React.FC = () => {
                         <Bookmark size={18} fill={isSaved ? "currentColor" : "none"} />
                         {isSaved ? '저장됨' : '저장'}
                     </button>
-                    <button className="ml-auto p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-colors">
+                    <button onClick={() => {
+                        const url = `${window.location.origin}/post/${post.id}`;
+                        if (navigator.share) {
+                            navigator.share({ title: post.title, text: post.previewText, url });
+                        } else {
+                            navigator.clipboard.writeText(url);
+                            alert('링크가 복사되었습니다!');
+                        }
+                    }} className="ml-auto p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-colors">
                         <Share2 size={20} />
                     </button>
                 </div>

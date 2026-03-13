@@ -49,7 +49,7 @@ export const EpisodeCard: React.FC<Props> = ({ post }) => {
       <div className="flex items-center gap-4 text-xs text-gray-500 font-bold">
         <div className="flex items-center gap-1.5">
             <MessageCircle size={16} className="text-gray-400" />
-            <span>{post.comments.length}</span>
+            <span>{post.commentCount ?? post.comments.length}</span>
         </div>
         <div className={`flex items-center gap-1.5 ${isLiked ? 'text-rose-500' : 'text-gray-400'}`}>
             <Heart size={16} className={isLiked ? "fill-current" : ""} />

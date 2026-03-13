@@ -207,7 +207,15 @@ export const ArenaDetail: React.FC = () => {
                         <Users size={18} strokeWidth={2} />
                         <span className="text-[15px] font-bold">{formatNumber(total)}</span>
                     </div>
-                    <button className="ml-auto p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-colors active:scale-95">
+                    <button onClick={() => {
+                        const url = `${window.location.origin}/arena/${voteItem.id}`;
+                        if (navigator.share) {
+                            navigator.share({ title: voteItem.title, text: voteItem.description, url });
+                        } else {
+                            navigator.clipboard.writeText(url);
+                            alert('링크가 복사되었습니다!');
+                        }
+                    }} className="ml-auto p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-colors active:scale-95">
                         <Share2 size={20} />
                     </button>
                 </div>
