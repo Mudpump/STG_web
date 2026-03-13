@@ -3,51 +3,60 @@
   <!-- 메인 페이지 -->
   <url>
     <loc>https://angle-angle.vercel.app/</loc>
+    <lastmod>2026-03-13</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <!-- 탐구줍줍 -->
   <url>
-    <loc>https://angle-angle.vercel.app/#/feed</loc>
+    <loc>https://angle-angle.vercel.app/feed</loc>
+    <lastmod>2026-03-13</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <!-- 이슈떡상 -->
   <url>
-    <loc>https://angle-angle.vercel.app/#/archive</loc>
+    <loc>https://angle-angle.vercel.app/archive</loc>
+    <lastmod>2026-03-13</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <!-- 토론찍먹 -->
   <url>
-    <loc>https://angle-angle.vercel.app/#/arena</loc>
+    <loc>https://angle-angle.vercel.app/arena</loc>
+    <lastmod>2026-03-13</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <!-- 세특 필수 가이드 -->
   <url>
-    <loc>https://angle-angle.vercel.app/#/brain</loc>
+    <loc>https://angle-angle.vercel.app/brain</loc>
+    <lastmod>2026-03-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <!-- 학과 정보 (주요 교수님) -->
   <url>
-    <loc>https://angle-angle.vercel.app/#/major/prof-cs</loc>
+    <loc>https://angle-angle.vercel.app/major/prof-cs</loc>
+    <lastmod>2026-03-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://angle-angle.vercel.app/#/major/prof-med</loc>
+    <loc>https://angle-angle.vercel.app/major/prof-med</loc>
+    <lastmod>2026-03-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://angle-angle.vercel.app/#/major/prof-biz-1</loc>
+    <loc>https://angle-angle.vercel.app/major/prof-biz-1</loc>
+    <lastmod>2026-03-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://angle-angle.vercel.app/#/major/prof-elec-2</loc>
+    <loc>https://angle-angle.vercel.app/major/prof-elec-2</loc>
+    <lastmod>2026-03-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>

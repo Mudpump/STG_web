@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { HashRouter, Routes, Route, Outlet, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Outlet, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { Sidebar } from './components/Sidebar';
@@ -1349,7 +1349,7 @@ const MyPage: React.FC = () => {
 
 export default function App() {
     return (
-        <HashRouter>
+        <BrowserRouter>
             <StoreProvider>
                 <ScrollToTop />
                 <Routes>
@@ -1373,6 +1373,6 @@ export default function App() {
                     </Route>
                 </Routes>
             </StoreProvider>
-        </HashRouter>
+        </BrowserRouter>
     );
 }
