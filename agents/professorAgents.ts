@@ -347,6 +347,7 @@ export async function runProfessorAgent(
         createdAt: '방금 전',
         tags: postResult.tags || ['교수님픽', majorInfo.id],
         isUser: false,
-        targetGrade: 'ALL'
+        targetGrade: 'ALL',
+        targetProfessorId: professor.id
     };
 }
