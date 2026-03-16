@@ -97,6 +97,7 @@ export interface Post {
   targetGrade?: GradeType; // Added for filtering
   episodeType?: string; // E1, E2, E3, E4 for Break posts
   targetProfessorId?: string; // [New] 특정 교수님 대상 질문글 (상담소용)
+  isPrivate?: boolean; // [New] 나만보기 기능
 }
 
 export interface Quiz {

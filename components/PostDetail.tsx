@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, Heart, Share2, Bookmark, Send, Trash2, CornerDownRight, User as UserIcon } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Heart, Share2, Bookmark, Send, Trash2, CornerDownRight, User as UserIcon, Lock } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { CATEGORIES, PROFESSORS } from '../constants';
 import ReactMarkdown from 'react-markdown';
@@ -34,6 +34,39 @@ export const PostDetail: React.FC = () => {
 
     if (!post) {
         return <div className="p-20 text-center text-gray-500">삭제되었거나 존재하지 않는 게시글입니다.</div>;
+    }
+
+    // [Private Post Guard] 비공개 글인데 작성자도 관리자도 아닌 경우 차단
+    const isOwner = currentUser && post.uid === currentUser.uid;
+    const isPrivateBlocked = post.isPrivate && !isOwner && !isAdmin;
+
+    if (isPrivateBlocked) {
+        return (
+            <div className="bg-white min-h-screen flex flex-col items-center justify-center max-w-4xl mx-auto md:shadow-xl md:mt-2 md:mb-6 md:rounded-2xl">
+                <div className="sticky top-0 md:top-16 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 h-12 flex items-center px-4 w-full md:rounded-t-2xl">
+                    <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-colors">
+                        <ArrowLeft size={22} className="text-gray-800" />
+                    </button>
+                    <span className="ml-2 font-bold text-gray-900">비공개 게시글</span>
+                </div>
+                <div className="flex-1 flex flex-col items-center justify-center p-10 text-center">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                        <Lock size={36} className="text-gray-400" />
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">나만보기 게시글입니다</h2>
+                    <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+                        이 글은 작성자가 비공개로 설정한 게시글이에요.<br/>
+                        작성자와 관리자만 열람할 수 있습니다.
+                    </p>
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="px-6 py-2.5 bg-primary text-white text-sm font-bold rounded-full hover:bg-primary-dark transition-colors"
+                    >
+                        돌아가기
+                    </button>
+                </div>
+            </div>
+        );
     }
 
     const isLiked = likedPostIds.has(post.id);
@@ -94,11 +127,18 @@ export const PostDetail: React.FC = () => {
             {/* Sticky Header - Adjusted top-16 for desktop to account for main header */}
             <div className="sticky top-0 md:top-16 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100 h-12 flex items-center px-4 justify-between md:rounded-t-2xl">
                 <div className="flex items-center">
-                    <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-colors">
+                    <button onClick={() => {
+                        // 상담소 글이면 해당 교수님의 상담소 탭으로 이동
+                        if (post.targetProfessorId && !isProfessor) {
+                            navigate(`/major/${post.targetProfessorId}?tab=COUNSELING`, { replace: true });
+                        } else {
+                            navigate(-1);
+                        }
+                    }} className="p-2 -ml-2 hover:bg-gray-50 rounded-full transition-colors">
                         <ArrowLeft size={22} className="text-gray-800" />
                     </button>
                     <span className="ml-2 font-bold text-gray-900">
-                        {isProfessor ? '연구실 게시판' : categoryName}
+                        {isProfessor ? '연구실 게시판' : (post.targetProfessorId ? '학생 상담소' : categoryName)}
                     </span>
                 </div>
 
@@ -144,7 +184,8 @@ export const PostDetail: React.FC = () => {
                     </div>
                 </div>
 
-                <h1 className="text-2xl font-bold text-gray-900 mb-3 leading-snug tracking-tight">
+                <h1 className="text-2xl font-bold text-gray-900 mb-3 leading-snug tracking-tight flex items-center gap-2">
+                    {post.isPrivate && <Lock size={20} className="text-primary flex-shrink-0" title="나만보기(비공개)" />}
                     {post.title}
                 </h1>
 

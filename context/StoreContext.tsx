@@ -267,7 +267,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           uid: d.uid,
           targetGrade: d.target_grade || 'ALL',
           episodeType: d.episode_type,
-          targetProfessorId: d.target_professor_id // [New] Map DB column
+          targetProfessorId: d.target_professor_id, // [New] Map DB column
+          isPrivate: d.is_private
         }));
       }
 
@@ -357,7 +358,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
       let query = supabase
         .from('posts')
-        .select('id, category_id, author_agent, author_role, author_avatar_id, title, content, preview_text, view_count, like_count, created_at, tags, is_user, uid, target_grade, episode_type, target_professor_id', { count: 'exact' });
+        .select('id, category_id, author_agent, author_role, author_avatar_id, title, content, preview_text, view_count, like_count, created_at, tags, is_user, uid, target_grade, episode_type, target_professor_id, is_private', { count: 'exact' });
 
       // MY_PROFS: 팔로우 교수의 글만
       if (params.categoryId === 'MY_PROFS') {
@@ -432,7 +433,8 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         uid: d.uid,
         targetGrade: d.target_grade || 'ALL',
         episodeType: d.episode_type,
-        targetProfessorId: d.target_professor_id
+        targetProfessorId: d.target_professor_id,
+        isPrivate: d.is_private
       }));
 
       // [FIX] 동기화 문제 해결: Feed 목록에 있는 게시글이 전역 posts에 즉시 반영되도록 병합
@@ -1048,7 +1050,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (!currentUser) return;
     const tempId = `temp-${Date.now()}`;
     const optimisticPost: Post = {
-      id: tempId, categoryId: post.categoryId, authorAgent: currentUser.displayName || '나', authorRole: 'User', authorAvatarId: currentUser.avatarId, title: post.title, content: post.content, previewText: post.previewText, comments: [], viewCount: 0, likeCount: 0, createdAt: '방금 전', tags: post.tags, isUser: true, uid: currentUser.uid, targetGrade: post.targetGrade, targetProfessorId: post.targetProfessorId
+      id: tempId, categoryId: post.categoryId, authorAgent: currentUser.displayName || '나', authorRole: 'User', authorAvatarId: currentUser.avatarId, title: post.title, content: post.content, previewText: post.previewText, comments: [], viewCount: 0, likeCount: 0, createdAt: '방금 전', tags: post.tags, isUser: true, uid: currentUser.uid, targetGrade: post.targetGrade, targetProfessorId: post.targetProfessorId, isPrivate: post.isPrivate
     };
     setPosts(prev => [optimisticPost, ...prev]);
     // [FIX] feedPosts(페이지네이션 리스트)에도 즉시 반영 — 탐구줍줍 피드용 (상담 글 제외)
@@ -1056,7 +1058,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       setFeedPosts(prev => [optimisticPost, ...prev]);
     }
     const { data, error } = await supabase.from('posts').insert({
-      title: post.title, content: post.content, category_id: post.categoryId, author_agent: currentUser.displayName, author_role: 'User', author_avatar_id: currentUser.avatarId || null, preview_text: post.previewText, tags: post.tags, is_user: true, uid: currentUser.uid, target_grade: post.targetGrade, target_professor_id: post.targetProfessorId
+      title: post.title, content: post.content, category_id: post.categoryId, author_agent: currentUser.displayName, author_role: 'User', author_avatar_id: currentUser.avatarId || null, preview_text: post.previewText, tags: post.tags, is_user: true, uid: currentUser.uid, target_grade: post.targetGrade, target_professor_id: post.targetProfessorId, is_private: post.isPrivate
     }).select().single();
 
     if (data && !error) {

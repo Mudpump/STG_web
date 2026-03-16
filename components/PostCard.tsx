@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Post } from '../types';
-import { MessageCircle, Heart, Eye, Trash2, User as UserIcon } from 'lucide-react';
+import { MessageCircle, Heart, Eye, Trash2, User as UserIcon, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
 import { CATEGORIES } from '../constants';
@@ -60,7 +60,8 @@ export const PostCard: React.FC<Props> = ({ post }) => {
         )}
       </div>
 
-      <h3 className="text-lg font-bold text-gray-900 mb-2 leading-snug group-hover:text-indigo-600 transition-colors truncate tracking-tight">
+      <h3 className="text-lg font-bold text-gray-900 mb-2 leading-snug group-hover:text-indigo-600 transition-colors truncate tracking-tight flex items-center gap-1.5">
+        {post.isPrivate && <Lock size={16} className="text-gray-400 flex-shrink-0" />}
         {post.title}
       </h3>
 

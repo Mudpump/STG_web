@@ -19,7 +19,7 @@ import { AdminRoute } from './components/AdminRoute';
 import { SearchPage } from './pages/SearchPage';
 import { LoginModal } from './components/LoginModal';
 import { MyCard } from './components/MyCard';
-import { ArrowLeft, CheckCircle2, UserPlus, MessageCircleQuestion, Bookmark, Heart, MessageCircle, Eye, ChevronRight, PenSquare, Search, Flame, Clock, Filter, Bot, BookOpen, PenTool, Briefcase, ThumbsUp, User as UserIcon, Trash2, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, UserPlus, MessageCircleQuestion, Bookmark, Heart, MessageCircle, Eye, ChevronRight, PenSquare, Search, Flame, Clock, Filter, Bot, BookOpen, PenTool, Briefcase, ThumbsUp, User as UserIcon, Trash2, X, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { TeacherBrainPage } from './pages/TeacherBrainPage';
 import { TeacherBrainDetail } from './pages/TeacherBrainDetail';
@@ -510,7 +510,8 @@ const MajorIntroPage: React.FC = () => {
                                                 </div>
 
 
-                                                <h4 className="text-base font-bold text-gray-900 mb-2 group-hover:text-primary transition-colors line-clamp-1 tracking-tight">
+                                                <h4 className="text-base font-bold text-gray-900 mb-2 group-hover:text-primary transition-colors line-clamp-1 tracking-tight flex items-center gap-1.5">
+                                                    {post.isPrivate && <Lock size={14} className="text-gray-400 flex-shrink-0" />}
                                                     {post.title}
                                                 </h4>
                                                 <p className="text-sm text-gray-500 line-clamp-2 mb-5 font-medium leading-relaxed">

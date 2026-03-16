@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Check, Compass, Link as LinkIcon, Lightbulb, RefreshCcw, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Check, Compass, Link as LinkIcon, Lightbulb, RefreshCcw, AlertCircle, Lock } from 'lucide-react';
 import { CATEGORIES, PROFESSORS } from '../constants';
 import { CategoryId, GradeType } from '../types';
 import { useStore } from '../context/StoreContext';
@@ -51,6 +51,7 @@ export const WritePostPage: React.FC = () => {
     // --- Counseling Specific State ---
     const [counselingStep, setCounselingStep] = useState<'SELECT_TYPE' | 'FORM'>('SELECT_TYPE');
     const [counselingType, setCounselingType] = useState<CounselingType | null>(null);
+    const [isPrivate, setIsPrivate] = useState(false); // [New] 나만보기 상태
 
     // Counseling Form Data
     const [cForm, setCForm] = useState({
@@ -228,7 +229,8 @@ export const WritePostPage: React.FC = () => {
                 authorAgent: currentUser?.displayName || '익명 학생',
                 tags: type === 'COUNSELING' ? ['Q&A', '상담', counselingType || '일반'] : ['질문', '세특'],
                 targetGrade: targetGrade, // Pass the selected grade
-                targetProfessorId: type === 'COUNSELING' ? profId : undefined // Pass Prof ID if Counseling
+                targetProfessorId: type === 'COUNSELING' ? profId : undefined, // Pass Prof ID if Counseling
+                isPrivate // [New] 나만보기 기능
             });
 
             if (type === 'COUNSELING') {
@@ -359,13 +361,26 @@ export const WritePostPage: React.FC = () => {
                             </div>
                         ) : (
                             <div className="space-y-6">
-                                <div className="flex items-center justify-between">
-                                    <span className={`text-xs font-bold px-2 py-1 rounded border ${counselingType === 'ROADMAP' ? 'text-indigo-600 bg-indigo-50 border-indigo-200' :
-                                        counselingType === 'CONNECTION' ? 'text-rose-600 bg-rose-50 border-rose-200' :
-                                            'text-amber-600 bg-amber-50 border-amber-200'
-                                        }`}>
-                                        {counselingType === 'ROADMAP' ? '🚀 로드맵 설계형' : counselingType === 'CONNECTION' ? '🔗 세특 꼬꼬무' : '💡 솔루션형'}
-                                    </span>
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <span className={`text-xs font-bold px-2 py-1 rounded border ${counselingType === 'ROADMAP' ? 'text-indigo-600 bg-indigo-50 border-indigo-200' :
+                                            counselingType === 'CONNECTION' ? 'text-rose-600 bg-rose-50 border-rose-200' :
+                                                'text-amber-600 bg-amber-50 border-amber-200'
+                                            }`}>
+                                            {counselingType === 'ROADMAP' ? '🚀 로드맵 설계형' : counselingType === 'CONNECTION' ? '🔗 세특 꼬꼬무' : '💡 솔루션형'}
+                                        </span>
+                                        <label className="flex items-center gap-1.5 cursor-pointer bg-gray-50 border border-gray-200 px-2 py-1 rounded-md hover:bg-gray-100 transition-colors">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={isPrivate} 
+                                                onChange={(e) => setIsPrivate(e.target.checked)} 
+                                                className="accent-primary w-3.5 h-3.5" 
+                                            />
+                                            <span className={`text-xs font-bold flex items-center gap-1 ${isPrivate ? 'text-primary' : 'text-gray-500'}`}>
+                                                <Lock size={12}/> 나만보기
+                                            </span>
+                                        </label>
+                                    </div>
                                     <button
                                         onClick={() => setCounselingStep('SELECT_TYPE')}
                                         className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
@@ -655,7 +670,20 @@ export const WritePostPage: React.FC = () => {
                         </div>
 
                         <div className="mb-6">
-                            <label className="block text-xs font-bold text-gray-900 mb-2">관심 분야 (카테고리)</label>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="block text-xs font-bold text-gray-900">관심 분야 (카테고리)</label>
+                                <label className="flex items-center gap-1.5 cursor-pointer bg-gray-50 border border-gray-200 px-2 py-1 rounded-md hover:bg-gray-100 transition-colors">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={isPrivate} 
+                                        onChange={(e) => setIsPrivate(e.target.checked)} 
+                                        className="accent-primary w-3.5 h-3.5" 
+                                    />
+                                    <span className={`text-xs font-bold flex items-center gap-1 ${isPrivate ? 'text-primary' : 'text-gray-500'}`}>
+                                        <Lock size={12}/> 나만보기
+                                    </span>
+                                </label>
+                            </div>
                             <div className="flex flex-wrap gap-2">
                                 {/* [Modified] '나의교수' 카테고리는 사용자가 직접 글을 쓸 수 없으므로 제외 */}
                                 {CATEGORIES.filter(c => c.id !== 'ALL' && c.id !== 'MY_PROFS').map(cat => (
