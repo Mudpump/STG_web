@@ -49,11 +49,8 @@ const MainLayout: React.FC = () => {
     const path = location.pathname;
     const { currentUser, openLoginModal, isAdmin } = useStore();
 
-    // Hide FAB on Read-only pages (Archive, Brain, Major) for non-admins, and always hide on Arena, Admin
-    const isReadOnlyPage = path.startsWith('/archive') || path.startsWith('/brain') || path.startsWith('/major');
-    const shouldHideFab = (isReadOnlyPage && !isAdmin) || path.startsWith('/arena') || path.startsWith('/admin');
-
-    const showFab = location.pathname !== '/write' && location.pathname !== '/search' && !shouldHideFab;
+    // FAB is only visible on the "탐구줍줍" (Feed) screen
+    const showFab = path.startsWith('/feed');
 
     let writeLink = '/write?type=FEED';
     let writeLabel = '새 글 쓰기';
