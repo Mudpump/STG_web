@@ -33,7 +33,7 @@ export const PostDetail: React.FC = () => {
     }, [id]);
 
     if (!post) {
-        return <div className="p-20 text-center text-gray-500">삭제되었거나 존재하지 않는 게시글입니다.</div>;
+        return <div className="p-20 text-center text-gray-500">로딩중..</div>;
     }
 
     // [Private Post Guard] 비공개 글인데 작성자도 관리자도 아닌 경우 차단
@@ -55,7 +55,7 @@ export const PostDetail: React.FC = () => {
                     </div>
                     <h2 className="text-xl font-bold text-gray-900 mb-2">나만보기 게시글입니다</h2>
                     <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-                        이 글은 작성자가 비공개로 설정한 게시글이에요.<br/>
+                        이 글은 작성자가 비공개로 설정한 게시글이에요.<br />
                         작성자와 관리자만 열람할 수 있습니다.
                     </p>
                     <button
