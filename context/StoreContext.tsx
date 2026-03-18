@@ -1028,7 +1028,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       } 
     }); 
     if (error) throw error; 
-    alert('이메일 확인 필요'); 
+    alert('가입이 완료되었습니다'); 
   };
   const checkNickname = async (nickname: string) => {
     const { data, error } = await supabase.from('agents').select('nickname').eq('nickname', nickname).maybeSingle();

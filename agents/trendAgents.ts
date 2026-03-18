@@ -19,6 +19,7 @@ const CONTENT_INSTRUCTION = `
        - **Information Density**: Intentionally **minimize transition words** (e.g., 'however', 'therefore') to force the reader to infer logical connections.
        - **Academic Tone**: Use precise, professional academic vocabulary relevant to the major.
        - **Structure**: Introduce **conflicting viewpoints**, complex causal chains (A→B→C), or detailed mechanisms.
+       - **가독성** : 유저가 읽기 쉽도록 적절히 문단을 나누어서, 줄바꿈이 될 수 있도록 해줘.
     3. **Topic Scope**: Focus on **2026 Trends** in Society, Culture, Technology, Economy, Politics, Environment, or Science.
     4. **SeTeuk Tip (Student Record Connection)**: 
        - **CRITICAL**: Connect the trend strictly to **Korean High School Curriculum Subjects** (고등학교 교과목).

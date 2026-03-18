@@ -226,11 +226,7 @@ export async function runCounselingAgent(
            - For experiments: How to calculate results (e.g., yield %), create graphs/tables, and interpret data.
            - For surveys: How to analyze responses (frequency analysis, cross-tabulation, simple correlation), visualize data, and draw conclusions.
 
-        4. **검색 키워드 추천 (Research Keywords)**
-           - Suggest 2-3 specific search terms the student can use on RISS(학술연구정보서비스), KOSIS(국가통계포털), Google Scholar, or DBpia to find relevant reference materials or existing data.
-           - Format: "[Platform]에서 '[keyword]' 검색"
-
-        5. **세특 어필 포인트 (Record Highlight)**
+        4. **세특 어필 포인트 (Record Highlight)**
            - Summarize which academic competencies (e.g., 데이터 분석력, 문제 해결력, 비판적 사고력, 융합적 탐구력) this research will demonstrate in the student record.
            - Connect it back to '희망 학과' to show major relevance.
 
