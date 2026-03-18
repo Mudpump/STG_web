@@ -4,6 +4,10 @@ import { CategoryId } from '../types';
 import { CATEGORY_IMAGES, TREND_IMAGE_POOL } from '../constants';
 import { getRandomCategory } from '../utils/aiMappings';
 import { ai, MODEL_NAME, cleanText, fetchCastFromDB } from './utils';
+import { GRADE_SUBJECTS } from '../utils/curriculumData';
+
+const ALL_HIGH_SCHOOL_SUBJECTS = Array.from(new Set(Object.values(GRADE_SUBJECTS).flat())).join(', ');
+
 
 // --- Shared Instructions ---
 
@@ -19,6 +23,8 @@ const CONTENT_INSTRUCTION = `
     4. **SeTeuk Tip (Student Record Connection)**: 
        - **CRITICAL**: Connect the trend strictly to **Korean High School Curriculum Subjects** (고등학교 교과목).
        - **DO NOT** use University Major names as headings. Use **High School Subjects**.
+       - **AVAILABLE SUBJECTS (CRITICAL)**: You MUST ONLY choose subjects from the following exact list:
+         [${ALL_HIGH_SCHOOL_SUBJECTS}]
        - **Structure Example**:
          - **확률과 통계**: [Analyze the trend using statistical data...]
          - **생활과 윤리**: [Discuss the ethical implications...]
