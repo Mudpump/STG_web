@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/nemotron.ts": {
+      "maxDuration": 60
+    }
+  },
   "rewrites": [
     {
       "source": "/((?!api|_next|assets|avatar|professors|schools|sitemap\\.xml|robots\\.txt).*)",
