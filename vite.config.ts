@@ -8,6 +8,14 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3000,
         host: '0.0.0.0',
+        proxy: {
+          // 개발 환경에서 /api/nemotron -> NVIDIA 엔드포인트로 프록시 (CORS 우회)
+          '/api/nemotron': {
+            target: 'https://integrate.api.nvidia.com',
+            changeOrigin: true,
+            rewrite: () => '/v1/chat/completions',
+          },
+        },
       },
       plugins: [react()],
       define: {

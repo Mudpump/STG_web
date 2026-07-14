@@ -8,6 +8,7 @@ import { RoadmapGenerator } from '../components/admin/RoadmapGenerator';
 import { TrendGenerator } from '../components/admin/TrendGenerator';
 import { VoteGenerator } from '../components/admin/VoteGenerator';
 import { StagingArea } from '../components/admin/StagingArea';
+import { AISettings } from '../components/admin/AISettings';
 
 export const AdminPage: React.FC = () => {
   return (
@@ -21,6 +22,9 @@ export const AdminPage: React.FC = () => {
             <p className="text-gray-500 text-sm">AI 에이전트 멀티 태스킹 제어실</p>
         </div>
       </div>
+
+      {/* AI 엔진 설정 (Gemini / Nemotron + API 키) */}
+      <AISettings />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
         {/* 학생 상담소 & 교수 에이전트 */}
